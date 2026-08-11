@@ -35,8 +35,8 @@ export async function createPayment({
       customer_email: customerEmail,
       customer_phone_number: '',
       notify_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/cinetpay`,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/invoices/${invoiceId}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/invoices/${invoiceId}`,
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/invoices/${invoiceId}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/invoices/${invoiceId}`,
       metadata: JSON.stringify({
         invoice_id: invoiceId,
         invoice_number: invoiceNumber,

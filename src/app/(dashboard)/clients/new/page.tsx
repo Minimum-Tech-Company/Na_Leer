@@ -41,7 +41,7 @@ export default function NewClientPage() {
     })
 
     if (!error) {
-      router.push('/dashboard/clients')
+      router.push('/clients')
     } else {
       alert('Erreur lors de la création du client')
       setLoading(false)
@@ -51,7 +51,7 @@ export default function NewClientPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/dashboard/clients">
+        <Link href="/clients">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -142,7 +142,7 @@ export default function NewClientPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-4">
-              <Link href="/dashboard/clients">
+              <Link href="/clients">
                 <Button variant="outline" type="button">Annuler</Button>
               </Link>
               <Button type="submit" disabled={loading}>

@@ -77,7 +77,7 @@ export default function InvoicesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Factures</h1>
           <p className="text-gray-600">Gérez toutes vos factures</p>
         </div>
-        <Link href="/dashboard/invoices/new">
+        <Link href="/invoices/new">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Nouvelle facture
@@ -110,7 +110,7 @@ export default function InvoicesPage() {
               <Receipt className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-1">Aucune facture</h3>
               <p className="text-gray-500 mb-4">Commencez par créer votre première facture</p>
-              <Link href="/dashboard/invoices/new">
+              <Link href="/invoices/new">
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
                   Créer une facture
@@ -145,7 +145,7 @@ export default function InvoicesPage() {
                     <p className="font-bold text-lg">{formatCurrency(invoice.total, invoice.currency)}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Link href={`/dashboard/invoices/${invoice.id}`}>
+                    <Link href={`/invoices/${invoice.id}`}>
                       <Button variant="ghost" size="icon">
                         <Eye className="h-4 w-4" />
                       </Button>

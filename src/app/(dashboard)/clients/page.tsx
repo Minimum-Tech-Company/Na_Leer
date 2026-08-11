@@ -54,7 +54,7 @@ export default function ClientsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
           <p className="text-gray-600">{clients.length} client{clients.length > 1 ? 's' : ''}</p>
         </div>
-        <Link href="/dashboard/clients/new">
+        <Link href="/clients/new">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Nouveau client
@@ -88,7 +88,7 @@ export default function ClientsPage() {
                   : 'Ajoutez votre premier client pour commencer'}
               </p>
               {!search && (
-                <Link href="/dashboard/clients/new">
+                <Link href="/clients/new">
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Ajouter un client
@@ -101,7 +101,7 @@ export default function ClientsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredClients.map((client) => (
-            <Link key={client.id} href={`/dashboard/clients/${client.id}`}>
+            <Link key={client.id} href={`/clients/${client.id}`}>
               <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                 <CardContent className="p-5">
                   <div className="flex items-start gap-3">

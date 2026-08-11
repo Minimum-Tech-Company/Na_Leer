@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -15,62 +14,42 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [debugMsg, setDebugMsg] = useState('')
-  const router = useRouter()
+  const [debug, setDebug] = useState('')
   const supabase = createClient()
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-    setDebugMsg('Demarrage de l\'inscription...')
+    setDebug('Connexion a Supabase...')
 
     try {
+      setDebug('Envoi de l\'inscription...')
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            full_name: fullName,
-          },
+          data: { full_name: fullName },
         },
       })
 
-      setDebugMsg(`Resultat: user=${!!data?.user}, session=${!!data?.session}, error=${!!error}`)
-
       if (error) {
+        setDebug(`Erreur Supabase: ${error.message} (code: ${error.code})`)
         setError(error.message)
         setLoading(false)
         return
       }
 
-      setSuccess(true)
-    } catch (err: any) {
-      setError('Erreur inattendue: ' + err.message)
-    }
-    setLoading(false)
-  }
+      setDebug('Inscription reussie ! Redirection...')
+      console.log('Register success:', data)
 
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-8 bg-gray-50">
-        <div className="text-center max-w-md bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Compte cree !</h1>
-          <p className="text-gray-600 mb-6">
-            Un email de verification a ete envoye a <strong>{email}</strong>. Verifiez votre boite de reception et vos spams.
-          </p>
-          <p className="text-gray-600 mb-6">Cliquez sur le lien dans l&apos;email pour activer votre compte, puis connectez-vous.</p>
-          <Link href="/login">
-            <Button className="w-full">Aller a la connexion</Button>
-          </Link>
-        </div>
-      </div>
-    )
+      // Force full page reload to ensure cookies are picked up
+      window.location.href = '/invoices'
+    } catch (err: any) {
+      setDebug(`Erreur JS: ${err.message}`)
+      setError('Erreur inattendue: ' + err.message)
+      setLoading(false)
+    }
   }
 
   return (
@@ -102,9 +81,9 @@ export default function RegisterPage() {
                 <strong>Erreur :</strong> {error}
               </div>
             )}
-            {debugMsg && (
-              <div className="bg-blue-50 border border-blue-200 text-blue-700 p-3 rounded-lg text-xs font-mono">
-                {debugMsg}
+            {debug && (
+              <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-lg text-xs font-mono break-all">
+                {debug}
               </div>
             )}
             <div>

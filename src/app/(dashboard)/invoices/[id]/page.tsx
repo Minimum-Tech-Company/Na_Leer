@@ -44,7 +44,7 @@ export default function InvoiceDetailPage() {
         .single()
 
       if (!invoiceData) {
-        router.push('/dashboard/invoices')
+        router.push('/invoices')
         return
       }
 
@@ -107,7 +107,7 @@ export default function InvoiceDetailPage() {
 
     await supabase.from('invoice_items').delete().eq('invoice_id', invoice.id)
     await supabase.from('invoices').delete().eq('id', invoice.id)
-    router.push('/dashboard/invoices')
+    router.push('/invoices')
   }
 
   if (loading) {
@@ -124,7 +124,7 @@ export default function InvoiceDetailPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/invoices">
+          <Link href="/invoices">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-5 w-5" />
             </Button>

@@ -34,8 +34,8 @@ export async function POST(
           currency: invoice.currency,
           description: `Facture ${invoice.invoice_number}`,
           notify_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/cinetpay`,
-          return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/invoices/${id}`,
-          cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/invoices/${id}`,
+          return_url: `${process.env.NEXT_PUBLIC_APP_URL}/invoices/${id}`,
+          cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/invoices/${id}`,
           metadata: JSON.stringify({
             invoice_id: id,
             invoice_number: invoice.invoice_number,

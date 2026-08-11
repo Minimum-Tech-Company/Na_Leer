@@ -19,11 +19,11 @@ import {
 import { Profile } from '@/types'
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Factures', href: '/dashboard/invoices', icon: Receipt },
-  { name: 'Clients', href: '/dashboard/clients', icon: Users },
-  { name: 'Paiements', href: '/dashboard/payments', icon: CreditCard },
-  { name: 'Paramètres', href: '/dashboard/settings', icon: Settings },
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Factures', href: '/invoices', icon: Receipt },
+  { name: 'Clients', href: '/clients', icon: Users },
+  { name: 'Paiements', href: '/payments', icon: CreditCard },
+  { name: 'Paramètres', href: '/settings', icon: Settings },
 ]
 
 export default function DashboardLayout({
@@ -69,7 +69,7 @@ export default function DashboardLayout({
         <div className="fixed inset-0 bg-gray-900/80" onClick={() => setSidebarOpen(false)} />
         <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
           <div className="flex items-center justify-between p-4 border-b">
-            <Link href="/dashboard" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <FileText className="h-7 w-7 text-blue-600" />
               <span className="text-lg font-bold text-gray-900">NA-Leer</span>
             </Link>
@@ -79,7 +79,7 @@ export default function DashboardLayout({
           </div>
           <nav className="p-4 space-y-1">
             {navigation.map((item) => {
-              const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+              const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
               return (
                 <Link
                   key={item.name}
@@ -109,7 +109,7 @@ export default function DashboardLayout({
           </div>
           <nav className="flex-1 p-4 space-y-1">
             {navigation.map((item) => {
-              const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+              const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
               return (
                 <Link
                   key={item.name}

@@ -35,7 +35,7 @@ export default function ClientDetailPage() {
         .single()
 
       if (!clientData) {
-        router.push('/dashboard/clients')
+        router.push('/clients')
         return
       }
 
@@ -69,7 +69,7 @@ export default function ClientDetailPage() {
   const handleDelete = async () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce client ?')) return
     await supabase.from('clients').delete().eq('id', params.id)
-    router.push('/dashboard/clients')
+    router.push('/clients')
   }
 
   if (loading) {
@@ -86,7 +86,7 @@ export default function ClientDetailPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/clients">
+          <Link href="/clients">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -194,7 +194,7 @@ export default function ClientDetailPage() {
               {invoices.map((invoice) => (
                 <Link
                   key={invoice.id}
-                  href={`/dashboard/invoices/${invoice.id}`}
+                  href={`/invoices/${invoice.id}`}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <div className="flex items-center gap-3">

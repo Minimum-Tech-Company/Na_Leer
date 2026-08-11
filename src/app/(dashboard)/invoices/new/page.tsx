@@ -118,13 +118,13 @@ export default function NewInvoicePage() {
 
     await supabase.from('invoice_items').insert(invoiceItems)
 
-    router.push(`/dashboard/invoices/${invoice.id}`)
+    router.push(`/invoices/${invoice.id}`)
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/dashboard/invoices">
+        <Link href="/invoices">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -165,7 +165,7 @@ export default function NewInvoicePage() {
               </Select>
               {clients.length === 0 && (
                 <p className="text-xs text-gray-500 mt-1">
-                  <Link href="/dashboard/clients" className="text-blue-600 hover:underline">
+                  <Link href="/clients" className="text-blue-600 hover:underline">
                     Ajoutez un client d&apos;abord
                   </Link>
                 </p>

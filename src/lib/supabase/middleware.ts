@@ -26,6 +26,11 @@ export async function updateSession(request: NextRequest) {
           )
         },
       },
+      cookieOptions: {
+        name: 'sb',
+        path: '/',
+        sameSite: 'lax',
+      },
     }
   )
 
@@ -50,7 +55,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthPage) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = '/invoices'
     return NextResponse.redirect(url)
   }
 

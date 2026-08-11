@@ -22,6 +22,11 @@ export async function createClient() {
           }
         },
       },
+      cookieOptions: {
+        name: 'sb',
+        path: '/',
+        sameSite: 'lax',
+      },
     }
   )
 }
