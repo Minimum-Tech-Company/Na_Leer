@@ -12,6 +12,7 @@ import { generateInvoiceNumber, formatCurrency } from '@/lib/utils'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { Client, InvoiceItem } from '@/types'
+import { canCreateInvoice } from '@/lib/subscription'
 
 export default function NewInvoicePage() {
   const [clients, setClients] = useState<Client[]>([])
@@ -25,8 +26,19 @@ export default function NewInvoicePage() {
     { description: '', quantity: 1, unit_price: 0, amount: 0 },
   ])
   const [loading, setLoading] = useState(false)
+  const [planLimit, setPlanLimit] = useState<{ allowed: boolean; reason?: string; current: number; max: number } | null>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    const checkPlan = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const limit = await canCreateInvoice(user.id)
+      setPlanLimit(limit)
+    }
+    checkPlan()
+  }, [supabase])
 
   useEffect(() => {
     setInvoiceNumber(generateInvoiceNumber())
@@ -80,9 +92,16 @@ export default function NewInvoicePage() {
       return
     }
 
-    setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+
+    const limitCheck = await canCreateInvoice(user.id)
+    if (!limitCheck.allowed) {
+      alert(limitCheck.reason)
+      return
+    }
+
+    setLoading(true)
 
     const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')
@@ -134,6 +153,25 @@ export default function NewInvoicePage() {
           <p className="text-gray-600">Remplissez les informations ci-dessous</p>
         </div>
       </div>
+
+      {planLimit && !planLimit.allowed && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-800 text-sm">
+            <strong>Limite atteinte :</strong> {planLimit.reason}
+          </p>
+          <Link href="/pricing" className="text-blue-600 text-sm font-medium hover:underline mt-2 inline-block">
+            Passer au plan Pro →
+          </Link>
+        </div>
+      )}
+
+      {planLimit && planLimit.allowed && planLimit.max > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p className="text-blue-800 text-sm">
+            {planLimit.current}/{planLimit.max} factures ce mois
+          </p>
+        </div>
+      )}
 
       {/* Invoice info */}
       <Card>

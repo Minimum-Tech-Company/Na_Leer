@@ -6,13 +6,18 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Profile } from '@/types'
+import { Profile, Plan, Subscription } from '@/types'
+import { formatCurrency } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
+import Link from 'next/link'
 
 export default function SettingsPage() {
   const [profile, setProfile] = useState<Partial<Profile>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [currentPlan, setCurrentPlan] = useState<Plan | null>(null)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -27,6 +32,23 @@ export default function SettingsPage() {
         .single()
 
       setProfile(data || {})
+
+      const { data: subData } = await supabase
+        .from('subscriptions')
+        .select('*, plans(*)')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (subData) {
+        setSubscription(subData)
+        setCurrentPlan(subData.plans)
+      } else {
+        setCurrentPlan({ id: 'free', name: 'Free', price_xof: 0, max_invoices: 3, max_clients: 5, has_online_payments: false, has_auto_reminders: false, has_multi_users: false, has_api_access: false })
+      }
+
       setLoading(false)
     }
 
@@ -168,6 +190,36 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {currentPlan && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Abonnement</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">{currentPlan.name}</p>
+                <p className="text-sm text-gray-600">
+                  {currentPlan.price_xof === 0 ? 'Gratuit' : `${formatCurrency(currentPlan.price_xof)}/mois`}
+                </p>
+              </div>
+              <Badge variant={subscription ? 'default' : 'secondary'}>
+                {subscription ? 'Actif' : 'Plan gratuit'}
+              </Badge>
+            </div>
+            <div className="text-sm text-gray-600 space-y-1">
+              <p>• {currentPlan.max_invoices === -1 ? 'Factures illimitées' : `${currentPlan.max_invoices} factures/mois`}</p>
+              <p>• {currentPlan.max_clients === -1 ? 'Clients illimités' : `${currentPlan.max_clients} clients`}</p>
+            </div>
+            {currentPlan.id === 'free' && (
+              <Link href="/pricing">
+                <Button className="w-full">Passer au plan Pro</Button>
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={saving}>

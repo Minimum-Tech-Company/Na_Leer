@@ -15,6 +15,7 @@ import {
   CreditCard,
   Menu,
   X,
+  Zap,
 } from 'lucide-react'
 import { Profile } from '@/types'
 
@@ -23,6 +24,7 @@ const navigation = [
   { name: 'Factures', href: '/invoices', icon: Receipt },
   { name: 'Clients', href: '/clients', icon: Users },
   { name: 'Paiements', href: '/payments', icon: CreditCard },
+  { name: 'Abonnement', href: '/pricing', icon: Zap },
   { name: 'Paramètres', href: '/settings', icon: Settings },
 ]
 

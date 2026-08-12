@@ -4,9 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-
-    // Verify webhook signature from CinetPay
-    // In production, verify the HMAC signature
     const { transaction_id, status, metadata } = body
 
     if (!transaction_id) {
@@ -15,60 +12,71 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Get invoice from metadata
-    let invoiceId: string | null = null
+    let meta: Record<string, any> = {}
     if (metadata) {
       try {
-        const meta = typeof metadata === 'string' ? JSON.parse(metadata) : metadata
-        invoiceId = meta.invoice_id
+        meta = typeof metadata === 'string' ? JSON.parse(metadata) : metadata
       } catch {
-        // Try to extract from transaction_id format: INV-{id}-{timestamp}
-        const match = transaction_id.match(/^INV-(.+)-\d+$/)
-        if (match) {
-          invoiceId = match[1]
-        }
+        // ignore
       }
     }
 
-    if (!invoiceId) {
-      return NextResponse.json({ error: 'Could not determine invoice_id' }, { status: 400 })
-    }
+    const isSuccess = status === 'SUCCESS' || status === 'ACCEPTED'
+    const isFailed = status === 'REFUSED' || status === 'CANCELED'
 
-    // Update invoice status
-    if (status === 'SUCCESS' || status === 'ACCEPTED') {
-      await supabase
-        .from('invoices')
-        .update({
-          status: 'paid',
-          paid_at: new Date().toISOString(),
-          cinetpay_payment_id: transaction_id,
-        })
-        .eq('id', invoiceId)
+    if (meta.type === 'subscription') {
+      // Handle subscription payment
+      if (isSuccess) {
+        const expiresAt = new Date()
+        expiresAt.setMonth(expiresAt.getMonth() + 1)
 
-      // Create payment record
-      const { data: invoice } = await supabase
-        .from('invoices')
-        .select('user_id, total, currency')
-        .eq('id', invoiceId)
-        .single()
-
-      if (invoice) {
-        await supabase.from('payments').insert({
-          invoice_id: invoiceId,
-          user_id: invoice.user_id,
-          amount: invoice.total,
-          currency: invoice.currency,
-          method: 'cinetpay',
-          status: 'completed',
+        await supabase.from('subscriptions').insert({
+          user_id: meta.user_id,
+          plan_id: meta.plan_id,
+          status: 'active',
+          started_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString(),
           cinetpay_transaction_id: transaction_id,
-          metadata: body,
         })
       }
-    } else if (status === 'REFUSED' || status === 'CANCELED') {
-      await supabase
-        .from('invoices')
-        .update({ status: 'overdue' })
-        .eq('id', invoiceId)
+    } else {
+      // Handle invoice payment
+      const invoiceId = meta.invoice_id || transaction_id.match(/^INV-(.+)-\d+$/)?.[1]
+
+      if (invoiceId && isSuccess) {
+        await supabase
+          .from('invoices')
+          .update({
+            status: 'paid',
+            paid_at: new Date().toISOString(),
+            cinetpay_payment_id: transaction_id,
+          })
+          .eq('id', invoiceId)
+
+        const { data: invoice } = await supabase
+          .from('invoices')
+          .select('user_id, total, currency')
+          .eq('id', invoiceId)
+          .single()
+
+        if (invoice) {
+          await supabase.from('payments').insert({
+            invoice_id: invoiceId,
+            user_id: invoice.user_id,
+            amount: invoice.total,
+            currency: invoice.currency,
+            method: 'cinetpay',
+            status: 'completed',
+            cinetpay_transaction_id: transaction_id,
+            metadata: body,
+          })
+        }
+      } else if (invoiceId && isFailed) {
+        await supabase
+          .from('invoices')
+          .update({ status: 'overdue' })
+          .eq('id', invoiceId)
+      }
     }
 
     return NextResponse.json({ success: true })

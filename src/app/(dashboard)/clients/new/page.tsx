@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft } from 'lucide-react'
+import { canCreateClient } from '@/lib/subscription'
 
 export default function NewClientPage() {
   const [name, setName] = useState('')
@@ -19,8 +20,19 @@ export default function NewClientPage() {
   const [country, setCountry] = useState('Sénégal')
   const [taxId, setTaxId] = useState('')
   const [loading, setLoading] = useState(false)
+  const [planLimit, setPlanLimit] = useState<{ allowed: boolean; reason?: string; current: number; max: number } | null>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    const checkPlan = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const limit = await canCreateClient(user.id)
+      setPlanLimit(limit)
+    }
+    checkPlan()
+  }, [supabase])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,6 +40,13 @@ export default function NewClientPage() {
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+
+    const limitCheck = await canCreateClient(user.id)
+    if (!limitCheck.allowed) {
+      alert(limitCheck.reason)
+      setLoading(false)
+      return
+    }
 
     const { error } = await supabase.from('clients').insert({
       user_id: user.id,
@@ -61,6 +80,25 @@ export default function NewClientPage() {
           <p className="text-gray-600">Ajoutez un nouveau client à votre carnet</p>
         </div>
       </div>
+
+      {planLimit && !planLimit.allowed && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-800 text-sm">
+            <strong>Limite atteinte :</strong> {planLimit.reason}
+          </p>
+          <Link href="/pricing" className="text-blue-600 text-sm font-medium hover:underline mt-2 inline-block">
+            Passer au plan Pro →
+          </Link>
+        </div>
+      )}
+
+      {planLimit && planLimit.allowed && planLimit.max > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p className="text-blue-800 text-sm">
+            {planLimit.current}/{planLimit.max} clients
+          </p>
+        </div>
+      )}
 
       <Card>
         <CardContent className="p-6">

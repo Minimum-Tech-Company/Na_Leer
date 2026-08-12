@@ -104,3 +104,28 @@ export interface DashboardStats {
   overdueInvoices: number
   recentPayments: Payment[]
 }
+
+export interface Plan {
+  id: string
+  name: string
+  price_xof: number
+  max_invoices: number
+  max_clients: number
+  has_online_payments: boolean
+  has_auto_reminders: boolean
+  has_multi_users: boolean
+  has_api_access: boolean
+}
+
+export interface Subscription {
+  id: string
+  user_id: string
+  plan_id: string
+  status: 'active' | 'cancelled' | 'expired' | 'pending'
+  started_at: string
+  expires_at: string | null
+  cinetpay_transaction_id: string | null
+  created_at: string
+  updated_at: string
+  plan?: Plan
+}
