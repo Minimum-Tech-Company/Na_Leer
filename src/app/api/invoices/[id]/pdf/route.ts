@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createCheckoutSession, createPaymentAttempt } from '@/lib/dexchange'
 
 export async function POST(
   request: NextRequest,
@@ -10,7 +11,6 @@ export async function POST(
     const body = await request.json()
     const supabase = await createClient()
 
-    // Get invoice
     const { data: invoice } = await supabase
       .from('invoices')
       .select('*')
@@ -22,38 +22,44 @@ export async function POST(
     }
 
     if (body.action === 'create_payment') {
-      // Create CinetPay payment
-      const response = await fetch('https://api.cinetpay.com/v2/payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          apikey: process.env.CINETPAY_API_KEY,
-          site_id: process.env.CINETPAY_MERCHANT_ID,
-          transaction_id: `INV-${id}-${Date.now()}`,
-          amount: invoice.total,
-          currency: invoice.currency,
-          description: `Facture ${invoice.invoice_number}`,
-          notify_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/cinetpay`,
-          return_url: `${process.env.NEXT_PUBLIC_APP_URL}/invoices/${id}`,
-          cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/invoices/${id}`,
-          metadata: JSON.stringify({
-            invoice_id: id,
-            invoice_number: invoice.invoice_number,
-          }),
-        }),
+      const { phone } = body
+
+      if (!phone) {
+        return NextResponse.json({ error: 'Numéro de téléphone requis' }, { status: 400 })
+      }
+
+      const reference = `INV-${id}-${Date.now()}`
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+      const session = await createCheckoutSession({
+        reference,
+        itemName: `Facture ${invoice.invoice_number}`,
+        amount: invoice.total,
+        currency: invoice.currency || 'XOF',
+        successUrl: `${appUrl}/invoices/${id}?paid=true`,
+        failureUrl: `${appUrl}/invoices/${id}?payment=failed`,
+        webhookUrl: `${appUrl}/api/webhooks/dexchange`,
+        metadata: {
+          type: 'invoice',
+          invoice_id: id,
+          invoice_number: invoice.invoice_number,
+        },
       })
 
-      if (!response.ok) {
-        return NextResponse.json({ error: 'Payment creation failed' }, { status: 500 })
-      }
+      const attempt = await createPaymentAttempt({
+        reference,
+        operator: 'wave',
+        countryISO: 'SN',
+        customer: {
+          phone,
+        },
+      })
 
-      const data = await response.json()
-
-      if (data.code === 201 && data.data?.payment_url) {
-        return NextResponse.json({ payment_url: data.data.payment_url })
-      }
-
-      return NextResponse.json({ error: 'Invalid response from CinetPay' }, { status: 500 })
+      return NextResponse.json({
+        session_id: session.id,
+        payment_url: attempt.payment_url,
+        reference,
+      })
     }
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })

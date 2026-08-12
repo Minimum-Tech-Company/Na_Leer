@@ -1,27 +1,19 @@
-export interface CinetPayConfig {
-  apikey: string
-  site_id: string
-  transaction_id: string
+export interface DexchangeCheckoutConfig {
+  reference: string
+  item_name: string
   amount: number
   currency: string
-  description: string
-  customer_name: string
-  customer_email: string
-  customer_phone_number?: string
-  notify_url: string
-  return_url: string
-  cancel_url: string
-  metadata?: string
+  success_url: string
+  failure_url: string
+  webhook_url: string
+  metadata?: Record<string, any>
 }
 
-export interface CinetPayPaymentResponse {
-  code: number
-  message: string
-  data: {
-    payment_url: string
-    payment_token: string
-    transaction_id: string
-  }
+export interface DexchangeCheckoutResponse {
+  id: string
+  reference: string
+  payment_url?: string
+  status: string
 }
 
 export interface InvoiceItem {
@@ -46,7 +38,7 @@ export interface Invoice {
   total: number
   notes: string | null
   currency: string
-  cinetpay_payment_id: string | null
+  dexchange_payment_id: string | null
   paid_at: string | null
   created_at: string
   updated_at: string
@@ -91,7 +83,7 @@ export interface Payment {
   currency: string
   method: string
   status: 'pending' | 'completed' | 'failed' | 'refunded'
-  cinetpay_transaction_id: string | null
+  dexchange_transaction_id: string | null
   metadata: Record<string, any> | null
   created_at: string
 }
@@ -124,7 +116,7 @@ export interface Subscription {
   status: 'active' | 'cancelled' | 'expired' | 'pending'
   started_at: string
   expires_at: string | null
-  cinetpay_transaction_id: string | null
+  dexchange_transaction_id: string | null
   created_at: string
   updated_at: string
   plan?: Plan

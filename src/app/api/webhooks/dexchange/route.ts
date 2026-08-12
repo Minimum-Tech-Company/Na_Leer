@@ -1,55 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { verifyWebhookSignature } from '@/lib/dexchange'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { transaction_id, status, metadata } = body
+    const { type, data } = body
 
-    if (!transaction_id) {
-      return NextResponse.json({ error: 'Missing transaction_id' }, { status: 400 })
+    const signature = request.headers.get('x-dexchange-signature') || ''
+    const rawBody = JSON.stringify(body)
+
+    if (!verifyWebhookSignature(rawBody, signature)) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
     const supabase = await createClient()
 
-    let meta: Record<string, any> = {}
-    if (metadata) {
-      try {
-        meta = typeof metadata === 'string' ? JSON.parse(metadata) : metadata
-      } catch {
-        // ignore
-      }
-    }
+    if (type === 'checkout.completed') {
+      const reference = data?.reference || data?.metadata?.reference
 
-    const isSuccess = status === 'SUCCESS' || status === 'ACCEPTED'
-    const isFailed = status === 'REFUSED' || status === 'CANCELED'
+      if (reference && reference.startsWith('SUB-')) {
+        const parts = reference.split('-')
+        const userId = parts[1]
+        const planId = parts[2]
 
-    if (meta.type === 'subscription') {
-      // Handle subscription payment
-      if (isSuccess) {
         const expiresAt = new Date()
         expiresAt.setMonth(expiresAt.getMonth() + 1)
 
         await supabase.from('subscriptions').insert({
-          user_id: meta.user_id,
-          plan_id: meta.plan_id,
+          user_id: userId,
+          plan_id: planId,
           status: 'active',
           started_at: new Date().toISOString(),
           expires_at: expiresAt.toISOString(),
-          cinetpay_transaction_id: transaction_id,
+          dexchange_transaction_id: data?.id || reference,
         })
-      }
-    } else {
-      // Handle invoice payment
-      const invoiceId = meta.invoice_id || transaction_id.match(/^INV-(.+)-\d+$/)?.[1]
+      } else if (reference && reference.startsWith('INV-')) {
+        const invoiceId = reference.split('-')[1]
 
-      if (invoiceId && isSuccess) {
         await supabase
           .from('invoices')
           .update({
             status: 'paid',
             paid_at: new Date().toISOString(),
-            cinetpay_payment_id: transaction_id,
+            dexchange_payment_id: data?.id || reference,
           })
           .eq('id', invoiceId)
 
@@ -65,13 +59,18 @@ export async function POST(request: NextRequest) {
             user_id: invoice.user_id,
             amount: invoice.total,
             currency: invoice.currency,
-            method: 'cinetpay',
+            method: 'dexchange',
             status: 'completed',
-            cinetpay_transaction_id: transaction_id,
+            dexchange_transaction_id: data?.id || reference,
             metadata: body,
           })
         }
-      } else if (invoiceId && isFailed) {
+      }
+    } else if (type === 'checkout.failed') {
+      const reference = data?.reference || data?.metadata?.reference
+
+      if (reference && reference.startsWith('INV-')) {
+        const invoiceId = reference.split('-')[1]
         await supabase
           .from('invoices')
           .update({ status: 'overdue' })
@@ -79,7 +78,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ received: true })
   } catch (error) {
     console.error('Webhook error:', error)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
