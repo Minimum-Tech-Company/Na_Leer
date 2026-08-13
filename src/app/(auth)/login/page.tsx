@@ -36,7 +36,7 @@ export default function LoginPage() {
       return
     }
 
-    window.location.href = '/invoices'
+    window.location.href = '/dashboard'
   }
 
   return (

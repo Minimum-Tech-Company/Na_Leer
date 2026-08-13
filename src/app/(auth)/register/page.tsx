@@ -44,7 +44,7 @@ export default function RegisterPage() {
       console.log('Register success:', data)
 
       // Force full page reload to ensure cookies are picked up
-      window.location.href = '/invoices'
+      window.location.href = '/dashboard'
     } catch (err: any) {
       setDebug(`Erreur JS: ${err.message}`)
       setError('Erreur inattendue: ' + err.message)

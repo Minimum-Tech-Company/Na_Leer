@@ -38,10 +38,10 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const isAuthPage = request.nextUrl.pathname.startsWith('/login') ||
-    request.nextUrl.pathname.startsWith('/register')
-  const isLandingPage = request.nextUrl.pathname === '/'
-  const isApiRoute = request.nextUrl.pathname.startsWith('/api')
+  const pathname = request.nextUrl.pathname
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register')
+  const isLandingPage = pathname === '/'
+  const isApiRoute = pathname.startsWith('/api')
 
   if (isApiRoute) {
     return supabaseResponse
@@ -55,7 +55,13 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthPage) {
     const url = request.nextUrl.clone()
-    url.pathname = '/invoices'
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  if (user && isLandingPage) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
 

@@ -20,7 +20,7 @@ import {
 import { Profile } from '@/types'
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Factures', href: '/invoices', icon: Receipt },
   { name: 'Clients', href: '/clients', icon: Users },
   { name: 'Paiements', href: '/payments', icon: CreditCard },
