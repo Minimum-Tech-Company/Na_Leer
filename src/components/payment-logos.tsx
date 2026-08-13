@@ -5,8 +5,8 @@ export function WaveLogo({ className = 'h-8' }: { className?: string }) {
     <Image
       src="/images/wave.png"
       alt="Wave"
-      width={120}
-      height={40}
+      width={447}
+      height={447}
       className={className}
       style={{ objectFit: 'contain' }}
     />
@@ -16,10 +16,10 @@ export function WaveLogo({ className = 'h-8' }: { className?: string }) {
 export function OrangeMoneyLogo({ className = 'h-8' }: { className?: string }) {
   return (
     <Image
-      src="/images/oarangemoney.png"
+      src="/images/orangemoney.png"
       alt="Orange Money"
-      width={120}
-      height={40}
+      width={447}
+      height={447}
       className={className}
       style={{ objectFit: 'contain' }}
     />
