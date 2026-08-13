@@ -77,7 +77,11 @@ export default function PricingPage() {
     setPurchasing(planId)
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) {
+      alert('Vous devez être connecté pour souscrire à un plan')
+      setPurchasing(null)
+      return
+    }
 
     const { data: profile } = await supabase
       .from('profiles')
@@ -110,8 +114,9 @@ export default function PricingPage() {
         alert('Erreur: ' + (data.error || 'Impossible de créer le paiement'))
         setPurchasing(null)
       }
-    } catch (err) {
-      alert('Erreur de connexion au service de paiement')
+    } catch (err: any) {
+      console.error('Erreur paiement:', err)
+      alert('Erreur: ' + (err.message || 'Erreur de connexion au service de paiement'))
       setPurchasing(null)
     }
   }
