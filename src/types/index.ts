@@ -69,6 +69,10 @@ export interface Profile {
   company_phone: string | null
   company_email: string | null
   tax_id: string | null
+  rccm: string | null
+  forme_juridique: string | null
+  ville: string | null
+  pays: string | null
   logo_url: string | null
   currency: string
   created_at: string

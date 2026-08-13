@@ -70,9 +70,9 @@ export default function InvoiceDetailPage() {
     fetchData()
   }, [supabase, params.id, router])
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (invoice && profile) {
-      downloadPDF(invoice, profile, items)
+      await downloadPDF(invoice, profile, items)
     }
   }
 
