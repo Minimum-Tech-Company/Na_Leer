@@ -164,6 +164,7 @@ export default function LandingPage() {
                   <WaveLogo className="h-6" />
                   <OrangeMoneyLogo className="h-6" />
                   <VisaLogo className="h-6" />
+                  <MastercardLogo className="h-6" />
                 </div>
               </div>
             </div>
