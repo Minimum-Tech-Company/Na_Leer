@@ -4,6 +4,7 @@ import {
   Globe, BarChart3, Clock, Users, Send, Receipt, Lock, Star, ChevronRight,
   Building2, TrendingUp, Mail
 } from 'lucide-react'
+import { WaveLogo, OrangeMoneyLogo, FreeMoneyLogo, VisaLogo, MastercardLogo, WizallLogo } from '@/components/payment-logos'
 
 const features = [
   {
@@ -159,12 +160,10 @@ export default function LandingPage() {
                   <span className="font-bold text-lg">Total</span>
                   <span className="font-bold text-lg text-blue-600">435 000 XOF</span>
                 </div>
-                <div className="mt-6 flex gap-2">
-                  {paymentMethods.map((pm) => (
-                    <div key={pm.name} className={`${pm.color} ${pm.textColor} px-3 py-1.5 rounded-lg text-xs font-medium`}>
-                      {pm.name}
-                    </div>
-                  ))}
+                <div className="mt-6 flex gap-2 flex-wrap">
+                  <WaveLogo className="h-6" />
+                  <OrangeMoneyLogo className="h-6" />
+                  <VisaLogo className="h-6" />
                 </div>
               </div>
             </div>
@@ -178,20 +177,13 @@ export default function LandingPage() {
           <div className="text-center mb-8">
             <p className="text-gray-400 text-sm font-medium uppercase tracking-wider">Moyens de paiement acceptés</p>
           </div>
-          <div className="flex flex-wrap justify-center gap-6">
-            {[
-              { name: 'Wave', icon: '📱', bg: 'bg-blue-500' },
-              { name: 'Orange Money', icon: '🟠', bg: 'bg-orange-500' },
-              { name: 'Free Money', icon: '🔴', bg: 'bg-red-500' },
-              { name: 'Visa', icon: '💳', bg: 'bg-blue-800' },
-              { name: 'Mastercard', icon: '💳', bg: 'bg-red-600' },
-              { name: 'Wizall', icon: '📱', bg: 'bg-green-600' },
-            ].map((pm) => (
-              <div key={pm.name} className="flex items-center gap-3 bg-white/10 backdrop-blur px-6 py-3 rounded-xl">
-                <span className="text-xl">{pm.icon}</span>
-                <span className="text-white font-semibold">{pm.name}</span>
-              </div>
-            ))}
+          <div className="flex flex-wrap justify-center items-center gap-4">
+            <WaveLogo className="h-10" />
+            <OrangeMoneyLogo className="h-10" />
+            <FreeMoneyLogo className="h-10" />
+            <VisaLogo className="h-10" />
+            <MastercardLogo className="h-10" />
+            <WizallLogo className="h-10" />
           </div>
         </div>
       </section>
@@ -354,7 +346,7 @@ export default function LandingPage() {
                 <span className="text-gray-500 ml-1">FCFA/mois</span>
               </div>
               <ul className="space-y-3 mb-8">
-                {['Factures illimitées', 'Clients illimités', 'Paiements Wave/OM/Visa', 'Relances automatiques', 'Support prioritaire'].map((f) => (
+                {['Factures illimitées', 'Clients illimités', 'Paiements Wave / OM / Visa', 'Relances automatiques', 'Support prioritaire'].map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
                     <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" /> {f}
                   </li>
