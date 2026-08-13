@@ -16,8 +16,12 @@ import {
   Menu,
   X,
   Zap,
+  UserCog,
+  Key,
+  Headphones,
+  Palette,
 } from 'lucide-react'
-import { Profile } from '@/types'
+import { Profile, Plan } from '@/types'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -28,12 +32,20 @@ const navigation = [
   { name: 'Paramètres', href: '/settings', icon: Settings },
 ]
 
+const businessNavigation = [
+  { name: 'Équipe', href: '/team', icon: UserCog },
+  { name: 'API & Intégrations', href: '/api-docs', icon: Key },
+  { name: 'Templates', href: '/templates', icon: Palette },
+  { name: 'Support', href: '/support', icon: Headphones },
+]
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [isBusiness, setIsBusiness] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
@@ -54,6 +66,17 @@ export default function DashboardLayout({
         .single()
 
       setProfile(data)
+
+      const { data: sub } = await supabase
+        .from('subscriptions')
+        .select('plans(*)')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      setIsBusiness(sub?.plans?.id === 'business')
     }
 
     getProfile()
@@ -98,6 +121,31 @@ export default function DashboardLayout({
                 </Link>
               )
             })}
+            {isBusiness && (
+              <>
+                <div className="pt-3 pb-1 px-3">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Business</p>
+                </div>
+                {businessNavigation.map((item) => {
+                  const isActive = pathname === item.href
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-purple-50 text-purple-700'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      {item.name}
+                    </Link>
+                  )
+                })}
+              </>
+            )}
           </nav>
         </div>
       </div>
@@ -127,6 +175,30 @@ export default function DashboardLayout({
                 </Link>
               )
             })}
+            {isBusiness && (
+              <>
+                <div className="pt-3 pb-1 px-3">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Business</p>
+                </div>
+                {businessNavigation.map((item) => {
+                  const isActive = pathname === item.href
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-purple-50 text-purple-700'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      {item.name}
+                    </Link>
+                  )
+                })}
+              </>
+            )}
           </nav>
           <div className="p-4 border-t">
             <div className="flex items-center gap-3 mb-3">

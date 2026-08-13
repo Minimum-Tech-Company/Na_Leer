@@ -2,7 +2,7 @@
 
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { Invoice, InvoiceItem, Profile } from '@/types'
+import { Invoice, InvoiceItem, Profile, InvoiceTemplate } from '@/types'
 import { formatCurrency, formatDate } from './utils'
 
 async function loadImage(url: string): Promise<HTMLImageElement | null> {
@@ -15,18 +15,33 @@ async function loadImage(url: string): Promise<HTMLImageElement | null> {
   })
 }
 
+function hexToRgb(hex: string): [number, number, number] {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result
+    ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+    : [41, 128, 185]
+}
+
 export async function generateInvoicePDF(
   invoice: Invoice,
   profile: Profile,
-  items: InvoiceItem[]
+  items: InvoiceItem[],
+  template?: InvoiceTemplate | null
 ): Promise<jsPDF> {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
 
+  const primaryRgb = hexToRgb(template?.primary_color || '#2980B9')
+  const accentRgb = hexToRgb(template?.accent_color || '#1E40AF')
+  const showLogo = template?.show_logo !== false
+  const showTaxId = template?.show_tax_id !== false
+  const showRccm = template?.show_rccm !== false
+  const footerText = template?.footer_text || 'Merci pour votre paiement'
+
   let y = 15
 
   // Logo
-  if (profile.logo_url) {
+  if (showLogo && profile.logo_url) {
     const logo = await loadImage(profile.logo_url)
     if (logo) {
       const logoHeight = 18
@@ -37,7 +52,7 @@ export async function generateInvoicePDF(
   }
 
   // Company name
-  doc.setFontSize(profile.logo_url ? 14 : 20)
+  doc.setFontSize(showLogo && profile.logo_url ? 14 : 20)
   doc.setFont('helvetica', 'bold')
   doc.text(profile.company_name || 'Votre Entreprise', 14, y)
   y += 7
@@ -62,11 +77,11 @@ export async function generateInvoicePDF(
     doc.text(profile.company_email, 14, y)
     y += 4
   }
-  if (profile.tax_id) {
+  if (showTaxId && profile.tax_id) {
     doc.text(`NINEA: ${profile.tax_id}`, 14, y)
     y += 4
   }
-  if (profile.rccm) {
+  if (showRccm && profile.rccm) {
     doc.text(`RCCM: ${profile.rccm}`, 14, y)
     y += 4
   }
@@ -74,7 +89,7 @@ export async function generateInvoicePDF(
   // Invoice title
   doc.setFontSize(24)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(41, 128, 185)
+  doc.setTextColor(primaryRgb[0], primaryRgb[1], primaryRgb[2])
   doc.text('FACTURE', pageWidth - 14, 20, { align: 'right' })
 
   // Invoice details
@@ -102,7 +117,7 @@ export async function generateInvoicePDF(
   doc.text(`Statut: ${statusLabels[invoice.status] || invoice.status}`, detailsX, detailsY, { align: 'right' })
 
   // Divider line
-  doc.setDrawColor(41, 128, 185)
+  doc.setDrawColor(primaryRgb[0], primaryRgb[1], primaryRgb[2])
   doc.setLineWidth(0.5)
   y = Math.max(y, detailsY) + 8
   doc.line(14, y, pageWidth - 14, y)
@@ -153,7 +168,7 @@ export async function generateInvoicePDF(
     body: tableData,
     theme: 'grid',
     headStyles: {
-      fillColor: [41, 128, 185],
+      fillColor: primaryRgb,
       textColor: 255,
       fontStyle: 'bold',
     },
@@ -182,7 +197,7 @@ export async function generateInvoicePDF(
   doc.text(`TVA (${invoice.tax_rate}%):`, totalsX, finalY + 7)
   doc.text(formatCurrency(invoice.tax_amount, invoice.currency), pageWidth - 14, finalY + 7, { align: 'right' })
 
-  doc.setDrawColor(41, 128, 185)
+  doc.setDrawColor(primaryRgb[0], primaryRgb[1], primaryRgb[2])
   doc.setLineWidth(0.3)
   doc.line(totalsX, finalY + 11, pageWidth - 14, finalY + 11)
 
@@ -207,7 +222,7 @@ export async function generateInvoicePDF(
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(128, 128, 128)
   doc.text(
-    `Généré par NA-Leer - ${new Date().toLocaleDateString('fr-FR')}`,
+    `${footerText} - Généré par NA-Leer`,
     pageWidth / 2,
     doc.internal.pageSize.getHeight() - 10,
     { align: 'center' }
@@ -216,7 +231,7 @@ export async function generateInvoicePDF(
   return doc
 }
 
-export async function downloadPDF(invoice: Invoice, profile: Profile, items: InvoiceItem[]) {
-  const doc = await generateInvoicePDF(invoice, profile, items)
+export async function downloadPDF(invoice: Invoice, profile: Profile, items: InvoiceItem[], template?: InvoiceTemplate | null) {
+  const doc = await generateInvoicePDF(invoice, profile, items, template)
   doc.save(`${invoice.invoice_number}.pdf`)
 }

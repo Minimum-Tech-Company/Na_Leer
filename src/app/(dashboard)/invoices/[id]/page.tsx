@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { downloadPDF } from '@/lib/pdf'
-import { Invoice, InvoiceItem, Profile } from '@/types'
+import { Invoice, InvoiceItem, Profile, InvoiceTemplate } from '@/types'
 import { ArrowLeft, Download, Send, CreditCard, Trash2 } from 'lucide-react'
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'destructive' | 'secondary' }> = {
@@ -26,6 +26,7 @@ export default function InvoiceDetailPage() {
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [items, setItems] = useState<InvoiceItem[]>([])
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [template, setTemplate] = useState<InvoiceTemplate | null>(null)
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(false)
   const supabase = createClient()
@@ -61,9 +62,18 @@ export default function InvoiceDetailPage() {
         .eq('id', user.id)
         .single()
 
+      // Fetch default template
+      const { data: templateData } = await supabase
+        .from('invoice_templates')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_default', true)
+        .single()
+
       setInvoice(invoiceData)
       setItems(itemsData || [])
       setProfile(profileData)
+      setTemplate(templateData)
       setLoading(false)
     }
 

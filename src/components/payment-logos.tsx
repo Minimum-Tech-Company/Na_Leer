@@ -1,25 +1,28 @@
+import Image from 'next/image'
+
 export function WaveLogo({ className = 'h-8' }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 140 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="140" height="40" rx="8" fill="#1DC3F0"/>
-      {/* Wave icon - stylized W like the real logo */}
-      <path d="M8 28 L14 14 L20 24 L26 12 L32 22 L36 18" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      <text x="44" y="26" fill="white" fontFamily="Arial, sans-serif" fontWeight="800" fontSize="18" letterSpacing="-0.5">wave</text>
-    </svg>
+    <Image
+      src="/images/wave.png"
+      alt="Wave"
+      width={120}
+      height={40}
+      className={className}
+      style={{ objectFit: 'contain' }}
+    />
   )
 }
 
 export function OrangeMoneyLogo({ className = 'h-8' }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 160 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="160" height="40" rx="8" fill="#FF7900"/>
-      {/* Orange square logo mark */}
-      <rect x="8" y="6" width="28" height="28" rx="4" fill="white"/>
-      <text x="13" y="27" fill="#FF7900" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="18">O</text>
-      {/* Text */}
-      <text x="44" y="19" fill="white" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="13">Orange</text>
-      <text x="44" y="33" fill="white" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="13" opacity="0.9">Money</text>
-    </svg>
+    <Image
+      src="/images/oarangemoney.png"
+      alt="Orange Money"
+      width={120}
+      height={40}
+      className={className}
+      style={{ objectFit: 'contain' }}
+    />
   )
 }
 

@@ -100,3 +100,15 @@ export async function canCreateClient(userId: string): Promise<{ allowed: boolea
 
   return { allowed: true, current, max }
 }
+
+export async function hasFeature(userId: string, feature: 'has_multi_users' | 'has_api_access' | 'has_online_payments' | 'has_auto_reminders'): Promise<boolean> {
+  const sub = await getCurrentSubscription(userId)
+  if (!sub) return false
+  return sub.plan[feature] === true
+}
+
+export async function isBusinessPlan(userId: string): Promise<boolean> {
+  const sub = await getCurrentSubscription(userId)
+  if (!sub) return false
+  return sub.plan.id === 'business'
+}

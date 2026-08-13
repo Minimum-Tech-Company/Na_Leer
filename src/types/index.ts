@@ -125,3 +125,63 @@ export interface Subscription {
   updated_at: string
   plan?: Plan
 }
+
+export interface TeamMember {
+  id: string
+  owner_id: string
+  user_id: string
+  role: 'admin' | 'member'
+  created_at: string
+  updated_at: string
+  user?: Profile
+}
+
+export interface Invitation {
+  id: string
+  owner_id: string
+  email: string
+  role: 'admin' | 'member'
+  token: string
+  status: 'pending' | 'accepted' | 'expired'
+  expires_at: string
+  created_at: string
+}
+
+export interface ApiKey {
+  id: string
+  user_id: string
+  name: string
+  key_prefix: string
+  key_hash: string
+  last_used_at: string | null
+  expires_at: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export interface InvoiceTemplate {
+  id: string
+  user_id: string
+  name: string
+  primary_color: string
+  accent_color: string
+  show_logo: boolean
+  show_tax_id: boolean
+  show_rccm: boolean
+  footer_text: string
+  is_default: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface SupportTicket {
+  id: string
+  user_id: string
+  subject: string
+  message: string
+  status: 'open' | 'in_progress' | 'resolved' | 'closed'
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  is_business: boolean
+  created_at: string
+  updated_at: string
+}
