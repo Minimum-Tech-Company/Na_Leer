@@ -11,7 +11,6 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { downloadPDF } from '@/lib/pdf'
 import { Invoice, InvoiceItem, Profile } from '@/types'
 import { ArrowLeft, Download, Send, CreditCard, Trash2 } from 'lucide-react'
-import { Input } from '@/components/ui/input'
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'destructive' | 'secondary' }> = {
   draft: { label: 'Brouillon', variant: 'secondary' },
@@ -29,8 +28,6 @@ export default function InvoiceDetailPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(false)
-  const [showPhoneModal, setShowPhoneModal] = useState(false)
-  const [phone, setPhone] = useState('')
   const supabase = createClient()
 
   useEffect(() => {
@@ -81,31 +78,20 @@ export default function InvoiceDetailPage() {
 
   const handlePay = async () => {
     if (!invoice) return
-
-    const cleanedPhone = phone.replace(/\s/g, '')
-    if (!cleanedPhone || cleanedPhone.length < 9) {
-      alert('Veuillez entrer un numéro de téléphone valide')
-      return
-    }
-
-    const fullPhone = cleanedPhone.startsWith('221') ? cleanedPhone : `221${cleanedPhone}`
     setPaying(true)
 
     try {
       const response = await fetch('/api/invoices/' + invoice.id + '/pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create_payment', phone: fullPhone }),
+        body: JSON.stringify({ action: 'create_payment', phone: '000000000' }),
       })
 
       const data = await response.json()
+      console.log('Invoice payment response:', data)
 
       if (data.payment_url) {
         window.location.href = data.payment_url
-      } else if (data.status_token) {
-        alert('Paiement initié ! Vérifiez votre téléphone pour valider.')
-        setShowPhoneModal(false)
-        setPaying(false)
       } else {
         alert('Erreur: ' + (data.error || 'Erreur lors de la création du paiement'))
         setPaying(false)
@@ -171,7 +157,7 @@ export default function InvoiceDetailPage() {
             </Button>
           )}
           {(invoice.status === 'sent' || invoice.status === 'overdue') && (
-            <Button onClick={() => { setPhone(''); setShowPhoneModal(true) }} disabled={paying}>
+            <Button onClick={handlePay} disabled={paying}>
               <CreditCard className="h-4 w-4 mr-2" />
               {paying ? 'Redirection...' : 'Payer en ligne'}
             </Button>
@@ -308,40 +294,6 @@ export default function InvoiceDetailPage() {
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {showPhoneModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-bold mb-4">Payer la facture</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Entrez votre numéro Wave ou Orange Money pour recevoir la demande de paiement.
-            </p>
-            <Input
-              type="tel"
-              placeholder="77 123 45 67"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="mb-4"
-            />
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setShowPhoneModal(false)}
-              >
-                Annuler
-              </Button>
-              <Button
-                className="flex-1"
-                onClick={handlePay}
-                disabled={paying || !phone}
-              >
-                {paying ? 'Paiement...' : 'Payer'}
-              </Button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   )
