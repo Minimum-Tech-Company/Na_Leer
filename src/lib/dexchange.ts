@@ -41,61 +41,10 @@ export async function createCheckoutSession(params: CreateCheckoutParams) {
 
   const data = await response.json()
   console.log('DEXCHANGE createCheckoutSession:', JSON.stringify(data))
-  if (data.status && data.status >= 400) {
+  if (data.statusCode && data.statusCode >= 400) {
     throw new Error(data.message || 'Erreur création session DEXCHANGE')
   }
   return data.data
-}
-
-export interface CreatePaymentAttemptParams {
-  reference: string
-  operator: 'wave' | 'orange_money'
-  countryISO: string
-  customer: {
-    name?: string
-    phone: string
-    email?: string
-  }
-}
-
-export async function createPaymentAttempt(params: CreatePaymentAttemptParams) {
-  const apiKey = getApiKey()
-  const response = await fetch(
-    `${DEXCHANGE_API_URL}/checkout-sessions/${params.reference}/attempts`,
-    {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        payment_method: 'mobile_money',
-        operator: params.operator,
-        countryISO: params.countryISO,
-        customer: params.customer,
-      }),
-    }
-  )
-
-  const data = await response.json()
-  console.log('DEXCHANGE createPaymentAttempt:', JSON.stringify(data))
-  if (data.status && data.status >= 400) {
-    throw new Error(data.message || 'Erreur création paiement DEXCHANGE')
-  }
-  return data.data
-}
-
-export async function getTransactionStatus(transactionId: string) {
-  const apiKey = getApiKey()
-  const response = await fetch(`${DEXCHANGE_API_URL}/transaction/${transactionId}`, {
-    method: 'GET',
-    headers: {
-      'x-api-key': apiKey,
-    },
-  })
-
-  const data = await response.json()
-  return data
 }
 
 export function verifyWebhookSignature(payload: string, signature: string): boolean {

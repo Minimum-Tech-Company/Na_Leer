@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createCheckoutSession, createPaymentAttempt } from '@/lib/dexchange'
+import { createCheckoutSession } from '@/lib/dexchange'
 
 export async function POST(
   request: NextRequest,
@@ -44,28 +44,20 @@ export async function POST(
           type: 'invoice',
           invoice_id: id,
           invoice_number: invoice.invoice_number,
-        },
-      })
-
-      const attempt = await createPaymentAttempt({
-        reference,
-        operator: 'wave',
-        countryISO: 'SN',
-        customer: {
           phone: formattedPhone,
         },
       })
 
       return NextResponse.json({
-        session_id: session.id,
-        payment_url: attempt.cashout_url || attempt.payment_url || null,
+        session_id: session.reference || reference,
+        payment_url: session.payment_url,
         reference,
       })
     }
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Invoice API error:', error)
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Internal error' }, { status: 500 })
   }
 }

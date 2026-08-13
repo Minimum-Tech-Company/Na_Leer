@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createCheckoutSession, createPaymentAttempt } from '@/lib/dexchange'
+import { createCheckoutSession } from '@/lib/dexchange'
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,28 +42,15 @@ export async function POST(request: NextRequest) {
         type: 'subscription',
         user_id: userId,
         plan_id,
+        phone: formattedPhone,
       },
     })
 
     console.log('Subscription API: Session created:', JSON.stringify(session))
 
-    const attempt = await createPaymentAttempt({
-      reference,
-      operator: 'wave',
-      countryISO: 'SN',
-      customer: {
-        name: customer_name || 'Client NA-Leer',
-        phone: formattedPhone,
-        email: customer_email || '',
-      },
-    })
-
-    console.log('Subscription API: Payment attempt created:', JSON.stringify(attempt))
-
     return NextResponse.json({
-      session_id: session.id,
-      payment_url: attempt.cashout_url || attempt.payment_url || null,
-      status_token: attempt.status_token || null,
+      session_id: session.reference || reference,
+      payment_url: session.payment_url,
       reference,
     })
   } catch (error: any) {
