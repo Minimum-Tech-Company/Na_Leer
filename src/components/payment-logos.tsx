@@ -6,7 +6,7 @@ export function WaveLogo({ className = 'h-8' }: { className?: string }) {
       <Image
         src="/images/wave.png"
         alt="Wave"
-        width={447}
+        width={894}
         height={447}
         className="w-full h-full object-contain"
       />
@@ -20,7 +20,7 @@ export function OrangeMoneyLogo({ className = 'h-8' }: { className?: string }) {
       <Image
         src="/images/orangemoney.png"
         alt="Orange Money"
-        width={447}
+        width={894}
         height={447}
         className="w-full h-full object-contain"
       />
