@@ -58,7 +58,7 @@ export async function POST(
 
       return NextResponse.json({
         session_id: session.id,
-        payment_url: attempt.payment_url,
+        payment_url: attempt.cashout_url || attempt.payment_url || null,
         reference,
       })
     }

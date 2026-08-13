@@ -1,25 +1,11 @@
 const DEXCHANGE_API_URL = 'https://api.dexpay.africa/api/v1'
 
-interface DexchangeConfig {
-  apiKey: string
-  apiSecret: string
-}
-
-function getConfig(): DexchangeConfig {
+function getApiKey(): string {
   const apiKey = process.env.DEXCHANGE_API_KEY
-  const apiSecret = process.env.DEXCHANGE_API_SECRET
-  if (!apiKey || !apiSecret) {
-    throw new Error('DEXCHANGE_API_KEY and DEXCHANGE_API_SECRET are required')
+  if (!apiKey) {
+    throw new Error('DEXCHANGE_API_KEY is required')
   }
-  return { apiKey, apiSecret }
-}
-
-function getHeaders() {
-  const { apiKey, apiSecret } = getConfig()
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${apiKey}:${apiSecret}`,
-  }
+  return apiKey
 }
 
 export interface CreateCheckoutParams {
@@ -34,9 +20,13 @@ export interface CreateCheckoutParams {
 }
 
 export async function createCheckoutSession(params: CreateCheckoutParams) {
+  const apiKey = getApiKey()
   const response = await fetch(`${DEXCHANGE_API_URL}/checkout-sessions`, {
     method: 'POST',
-    headers: getHeaders(),
+    headers: {
+      'x-api-key': apiKey,
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
       reference: params.reference,
       item_name: params.itemName,
@@ -50,7 +40,8 @@ export async function createCheckoutSession(params: CreateCheckoutParams) {
   })
 
   const data = await response.json()
-  if (!data.success) {
+  console.log('DEXCHANGE createCheckoutSession:', JSON.stringify(data))
+  if (data.status && data.status >= 400) {
     throw new Error(data.message || 'Erreur création session DEXCHANGE')
   }
   return data.data
@@ -68,13 +59,17 @@ export interface CreatePaymentAttemptParams {
 }
 
 export async function createPaymentAttempt(params: CreatePaymentAttemptParams) {
+  const apiKey = getApiKey()
   const response = await fetch(
-    `${DEXCHANGE_API_URL}/checkout-sessions/${params.reference}/payment-attempts`,
+    `${DEXCHANGE_API_URL}/checkout-sessions/${params.reference}/attempts`,
     {
       method: 'POST',
-      headers: getHeaders(),
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        payment_method: 'MOBILE_MONEY',
+        payment_method: 'mobile_money',
         operator: params.operator,
         countryISO: params.countryISO,
         customer: params.customer,
@@ -83,16 +78,20 @@ export async function createPaymentAttempt(params: CreatePaymentAttemptParams) {
   )
 
   const data = await response.json()
-  if (!data.success) {
+  console.log('DEXCHANGE createPaymentAttempt:', JSON.stringify(data))
+  if (data.status && data.status >= 400) {
     throw new Error(data.message || 'Erreur création paiement DEXCHANGE')
   }
   return data.data
 }
 
 export async function getTransactionStatus(transactionId: string) {
+  const apiKey = getApiKey()
   const response = await fetch(`${DEXCHANGE_API_URL}/transaction/${transactionId}`, {
     method: 'GET',
-    headers: getHeaders(),
+    headers: {
+      'x-api-key': apiKey,
+    },
   })
 
   const data = await response.json()

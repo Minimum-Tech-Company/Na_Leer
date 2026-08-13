@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
     const reference = `SUB-${userId.substring(0, 8)}-${plan_id}-${Date.now()}`
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://na-leer.vercel.app'
 
+    console.log('Subscription API: Creating session with reference:', reference, 'amount:', amount, 'phone:', formattedPhone)
+
     const session = await createCheckoutSession({
       reference,
       itemName: `Abonnement NA-Leer - Plan ${plan_id}`,
@@ -43,6 +45,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    console.log('Subscription API: Session created:', JSON.stringify(session))
+
     const attempt = await createPaymentAttempt({
       reference,
       operator: 'wave',
@@ -54,9 +58,11 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    console.log('Subscription API: Payment attempt created:', JSON.stringify(attempt))
+
     return NextResponse.json({
       session_id: session.id,
-      payment_url: attempt.payment_url,
+      payment_url: attempt.cashout_url || attempt.payment_url || null,
       status_token: attempt.status_token || null,
       reference,
     })
