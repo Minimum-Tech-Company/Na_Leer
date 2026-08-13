@@ -7,18 +7,26 @@ export async function POST(request: NextRequest) {
     const { plan_id, amount, customer_name, customer_email, phone } = await request.json()
 
     if (!plan_id || !amount || !phone) {
-      return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
+      return NextResponse.json({ error: 'Paramètres manquants: plan_id, amount, phone requis' }, { status: 400 })
     }
 
+    let userId = 'guest'
     const supabase = await createClient()
-
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+    if (user) {
+      userId = user.id
     }
 
-    const reference = `SUB-${user.id.substring(0, 8)}-${plan_id}-${Date.now()}`
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    let formattedPhone = phone.replace(/\s/g, '')
+    if (formattedPhone.startsWith('+')) {
+      formattedPhone = formattedPhone.substring(1)
+    }
+    if (!formattedPhone.startsWith('221')) {
+      formattedPhone = `221${formattedPhone}`
+    }
+
+    const reference = `SUB-${userId.substring(0, 8)}-${plan_id}-${Date.now()}`
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://na-leer.vercel.app'
 
     const session = await createCheckoutSession({
       reference,
@@ -30,7 +38,7 @@ export async function POST(request: NextRequest) {
       webhookUrl: `${appUrl}/api/webhooks/dexchange`,
       metadata: {
         type: 'subscription',
-        user_id: user.id,
+        user_id: userId,
         plan_id,
       },
     })
@@ -40,15 +48,16 @@ export async function POST(request: NextRequest) {
       operator: 'wave',
       countryISO: 'SN',
       customer: {
-        name: customer_name || user.email,
-        phone,
-        email: customer_email || user.email,
+        name: customer_name || 'Client NA-Leer',
+        phone: formattedPhone,
+        email: customer_email || '',
       },
     })
 
     return NextResponse.json({
       session_id: session.id,
       payment_url: attempt.payment_url,
+      status_token: attempt.status_token || null,
       reference,
     })
   } catch (error: any) {

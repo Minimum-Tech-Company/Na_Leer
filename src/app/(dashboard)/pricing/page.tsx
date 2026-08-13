@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle, X, CreditCard, Zap, Crown } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import { Plan, Subscription } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
@@ -27,6 +28,8 @@ export default function PricingPage() {
   const [currentPlanId, setCurrentPlanId] = useState<string>('free')
   const [loading, setLoading] = useState(true)
   const [purchasing, setPurchasing] = useState<string | null>(null)
+  const [phone, setPhone] = useState('')
+  const [showPhoneModal, setShowPhoneModal] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -63,6 +66,14 @@ export default function PricingPage() {
     const plan = plans.find(p => p.id === planId)
     if (!plan || plan.price_xof === 0) return
 
+    const cleanedPhone = phone.replace(/\s/g, '')
+    if (!cleanedPhone || cleanedPhone.length < 9) {
+      alert('Veuillez entrer un numéro de téléphone valide')
+      return
+    }
+
+    const fullPhone = cleanedPhone.startsWith('221') ? cleanedPhone : `221${cleanedPhone}`
+
     setPurchasing(planId)
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -83,6 +94,7 @@ export default function PricingPage() {
           amount: plan.price_xof,
           customer_name: profile?.full_name || '',
           customer_email: profile?.email || '',
+          phone: fullPhone,
         }),
       })
 
@@ -90,6 +102,10 @@ export default function PricingPage() {
 
       if (data.payment_url) {
         window.location.href = data.payment_url
+      } else if (data.status_token) {
+        alert('Paiement initié ! Vérifiez votre téléphone pour valider le paiement Wave.')
+        setShowPhoneModal(null)
+        setPurchasing(null)
       } else {
         alert('Erreur: ' + (data.error || 'Impossible de créer le paiement'))
         setPurchasing(null)
@@ -219,7 +235,10 @@ export default function PricingPage() {
                   ) : (
                     <Button
                       className="w-full"
-                      onClick={() => handlePurchase(plan.id)}
+                      onClick={() => {
+                        setPhone('')
+                        setShowPhoneModal(plan.id)
+                      }}
                       disabled={purchasing === plan.id}
                     >
                       {purchasing === plan.id ? 'Redirection...' : `Passer au ${plan.name}`}
@@ -249,6 +268,40 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
+
+      {showPhoneModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-bold mb-4">Numéro de téléphone</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Entrez votre numéro Wave ou Orange Money pour recevoir la demande de paiement.
+            </p>
+            <Input
+              type="tel"
+              placeholder="77 123 45 67"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="mb-4"
+            />
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowPhoneModal(null)}
+              >
+                Annuler
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => handlePurchase(showPhoneModal)}
+                disabled={purchasing === showPhoneModal || !phone}
+              >
+                {purchasing === showPhoneModal ? 'Paiement...' : 'Payer'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

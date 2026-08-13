@@ -29,7 +29,8 @@ export async function POST(
       }
 
       const reference = `INV-${id}-${Date.now()}`
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      const formattedPhone = phone.startsWith('221') ? phone : `221${phone}`
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://na-leer.vercel.app'
 
       const session = await createCheckoutSession({
         reference,
@@ -51,7 +52,7 @@ export async function POST(
         operator: 'wave',
         countryISO: 'SN',
         customer: {
-          phone,
+          phone: formattedPhone,
         },
       })
 
