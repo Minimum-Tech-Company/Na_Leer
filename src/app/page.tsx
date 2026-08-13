@@ -160,7 +160,7 @@ export default function LandingPage() {
                   <span className="font-bold text-lg">Total</span>
                   <span className="font-bold text-lg text-blue-600">435 000 XOF</span>
                 </div>
-                <div className="mt-6 flex items-center flex-wrap -space-x-1">
+                <div className="mt-6 flex items-center gap-2 flex-wrap">
                   <WaveLogo className="h-6" />
                   <OrangeMoneyLogo className="h-6" />
                   <VisaLogo className="h-6" />
@@ -178,7 +178,7 @@ export default function LandingPage() {
           <div className="text-center mb-8">
             <p className="text-gray-400 text-sm font-medium uppercase tracking-wider">Moyens de paiement acceptés</p>
           </div>
-          <div className="flex flex-wrap justify-center items-center gap-1">
+          <div className="flex flex-wrap justify-center items-center gap-2">
             <WaveLogo className="h-10" />
             <OrangeMoneyLogo className="h-10" />
             <FreeMoneyLogo className="h-10" />
