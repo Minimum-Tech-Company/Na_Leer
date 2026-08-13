@@ -32,14 +32,14 @@ export default function TeamPage() {
     // Check plan
     const { data: sub } = await supabase
       .from('subscriptions')
-      .select('plans(*)')
+      .select('plan:plans(*)')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(1)
       .single()
 
-    setCurrentPlan(sub?.plans as Plan || null)
+    setCurrentPlan((Array.isArray(sub?.plan) ? sub.plan[0] : sub?.plan) as Plan || null)
 
     // Fetch team data
     const res = await fetch('/api/team')

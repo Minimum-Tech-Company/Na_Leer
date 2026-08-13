@@ -69,14 +69,14 @@ export default function DashboardLayout({
 
       const { data: sub } = await supabase
         .from('subscriptions')
-        .select('plans(*)')
+        .select('plan:plans(*)')
         .eq('user_id', user.id)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
         .single()
 
-      setIsBusiness(sub?.plans?.id === 'business')
+      setIsBusiness((sub?.plan as any)?.id === 'business')
     }
 
     getProfile()

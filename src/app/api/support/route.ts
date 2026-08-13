@@ -26,14 +26,14 @@ export async function POST(request: NextRequest) {
   // Check if Business plan for priority support
   const { data: sub } = await supabase
     .from('subscriptions')
-    .select('plans(*)')
+    .select('plan:plans(*)')
     .eq('user_id', user.id)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(1)
     .single()
 
-  const isBusiness = sub?.plans?.id === 'business'
+  const isBusiness = (sub?.plan as any)?.id === 'business'
 
   const { data: ticket, error } = await supabase
     .from('support_tickets')

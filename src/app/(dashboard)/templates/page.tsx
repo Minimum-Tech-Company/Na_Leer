@@ -39,14 +39,14 @@ export default function TemplatesPage() {
 
     const { data: sub } = await supabase
       .from('subscriptions')
-      .select('plans(*)')
+      .select('plan:plans(*)')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(1)
       .single()
 
-    setCurrentPlan(sub?.plans as Plan || null)
+    setCurrentPlan((Array.isArray(sub?.plan) ? sub.plan[0] : sub?.plan) as Plan || null)
 
     const { data } = await supabase
       .from('invoice_templates')
