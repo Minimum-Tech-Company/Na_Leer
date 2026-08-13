@@ -160,7 +160,7 @@ export default function LandingPage() {
                   <span className="font-bold text-lg">Total</span>
                   <span className="font-bold text-lg text-blue-600">435 000 XOF</span>
                 </div>
-                <div className="mt-6 flex gap-1 items-center flex-wrap">
+                <div className="mt-6 flex items-center flex-wrap -space-x-1">
                   <WaveLogo className="h-6" />
                   <OrangeMoneyLogo className="h-6" />
                   <VisaLogo className="h-6" />
