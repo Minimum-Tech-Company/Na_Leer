@@ -5,7 +5,10 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { FileText, Upload, Building2, User, Mail, Phone, MapPin, Hash, Globe, Scale, ArrowRight, ArrowLeft, Check, X } from 'lucide-react'
+import {
+  FileText, Upload, Building2, User, Mail, Phone, MapPin, Hash, Globe, Scale,
+  ArrowRight, ArrowLeft, Check, X, Eye, EyeOff, Lock as LockIcon
+} from 'lucide-react'
 
 const FORME_JURIDIQUE = [
   'SARL', 'SARLU', 'SA', 'SAS', 'SASU', 'GIE', 'EI', 'Auto-entrepreneur', 'Association', 'ONG', 'Autre'
@@ -15,27 +18,6 @@ const VILLES_SENEGAL = [
   'Dakar', 'Thiès', 'Rufisque', 'Saint-Louis', 'Ziguinchor', 'Kaolack', 'Touba', 'Mbour', 'Banjoul', 'Louga', 'Fatick', 'Kolda', 'Matam', 'Kaffrine', 'Kédougou', 'Sédhiou', 'Autre'
 ]
 
-interface Step1Data {
-  full_name: string
-  email: string
-  password: string
-}
-
-interface Step2Data {
-  company_name: string
-  forme_juridique: string
-  ninea: string
-  rccm: string
-}
-
-interface Step3Data {
-  company_address: string
-  ville: string
-  pays: string
-  company_phone: string
-  company_email: string
-}
-
 export default function RegisterPage() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -43,24 +25,28 @@ export default function RegisterPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
-  const [step1, setStep1] = useState<Step1Data>({ full_name: '', email: '', password: '' })
-  const [step2, setStep2] = useState<Step2Data>({ company_name: '', forme_juridique: 'SARL', ninea: '', rccm: '' })
-  const [step3, setStep3] = useState<Step3Data>({ company_address: '', ville: 'Dakar', pays: 'Sénégal', company_phone: '', company_email: '' })
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [companyName, setCompanyName] = useState('')
+  const [formeJuridique, setFormeJuridique] = useState('SARL')
+  const [ninea, setNinea] = useState('')
+  const [rccm, setRccm] = useState('')
+  const [companyAddress, setCompanyAddress] = useState('')
+  const [ville, setVille] = useState('Dakar')
+  const [pays] = useState('Sénégal')
+  const [companyPhone, setCompanyPhone] = useState('')
+  const [companyEmail, setCompanyEmail] = useState('')
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setError('Le logo ne doit pas dépasser 2 Mo')
-        return
-      }
-      if (!file.type.startsWith('image/')) {
-        setError('Le fichier doit être une image')
-        return
-      }
+      if (file.size > 2 * 1024 * 1024) { setError('Le logo ne doit pas dépasser 2 Mo'); return }
+      if (!file.type.startsWith('image/')) { setError('Le fichier doit être une image'); return }
       setLogoFile(file)
       const reader = new FileReader()
       reader.onloadend = () => setLogoPreview(reader.result as string)
@@ -73,37 +59,29 @@ export default function RegisterPage() {
     if (!logoFile) return null
     const ext = logoFile.name.split('.').pop()
     const path = `${userId}/logo.${ext}`
-    const { error } = await supabase.storage.from('logos').upload(path, logoFile, { upsert: true })
-    if (error) {
-      console.error('Logo upload error:', error)
-      return null
-    }
+    await supabase.storage.from('logos').upload(path, logoFile, { upsert: true })
     const { data } = supabase.storage.from('logos').getPublicUrl(path)
     return data.publicUrl
   }
 
-  const validateStep1 = () => {
-    if (!step1.full_name.trim()) { setError('Le nom complet est requis'); return false }
-    if (!step1.email.trim()) { setError('L\'email est requis'); return false }
-    if (!step1.email.includes('@')) { setError('Email invalide'); return false }
-    if (step1.password.length < 6) { setError('Le mot de passe doit faire au moins 6 caractères'); return false }
+  const validateStep = () => {
     setError('')
+    if (step === 1) {
+      if (!fullName.trim()) { setError('Le nom complet est requis'); return false }
+      if (!email.trim() || !email.includes('@')) { setError('Email invalide'); return false }
+      if (password.length < 6) { setError('Le mot de passe doit faire au moins 6 caractères'); return false }
+      return true
+    }
+    if (step === 2) {
+      if (!companyName.trim()) { setError('Le nom de l\'entreprise est requis'); return false }
+      if (!ninea.trim()) { setError('Le NINEA est requis'); return false }
+      if (ninea.replace(/\s/g, '').length < 9) { setError('Le NINEA doit contenir au moins 9 caractères'); return false }
+      return true
+    }
     return true
   }
 
-  const validateStep2 = () => {
-    if (!step2.company_name.trim()) { setError('Le nom de l\'entreprise est requis'); return false }
-    if (!step2.ninea.trim()) { setError('Le NINEA est requis pour les entreprises au Sénégal'); return false }
-    if (step2.ninea.replace(/\s/g, '').length < 9) { setError('Le NINEA doit contenir au moins 9 caractères'); return false }
-    setError('')
-    return true
-  }
-
-  const handleNext = () => {
-    setError('')
-    if (step === 1 && validateStep1()) setStep(2)
-    else if (step === 2 && validateStep2()) setStep(3)
-  }
+  const handleNext = () => { if (validateStep()) setStep(step + 1) }
 
   const handleSubmit = async () => {
     setError('')
@@ -111,36 +89,23 @@ export default function RegisterPage() {
 
     try {
       const { data, error: authError } = await supabase.auth.signUp({
-        email: step1.email,
-        password: step1.password,
-        options: {
-          data: {
-            full_name: step1.full_name,
-            company_name: step2.company_name,
-            company_phone: step3.company_phone,
-          },
-        },
+        email, password,
+        options: { data: { full_name: fullName, company_name: companyName, company_phone: companyPhone } },
       })
 
-      if (authError) {
-        setError(authError.message)
-        setLoading(false)
-        return
-      }
+      if (authError) { setError(authError.message); setLoading(false); return }
 
       if (data.user) {
         const logoUrl = await uploadLogo(data.user.id)
-
         await supabase.from('profiles').update({
-          company_name: step2.company_name,
-          forme_juridique: step2.forme_juridique,
-          tax_id: step2.ninea.replace(/\s/g, ''),
-          rccm: step2.rccm || null,
-          company_address: step3.company_address,
-          ville: step3.ville,
-          pays: step3.pays,
-          company_phone: step3.company_phone,
-          company_email: step3.company_email || step1.email,
+          company_name: companyName,
+          forme_juridique: formeJuridique,
+          tax_id: ninea.replace(/\s/g, ''),
+          rccm: rccm || null,
+          company_address: companyAddress,
+          ville, pays,
+          company_phone: companyPhone,
+          company_email: companyEmail || email,
           logo_url: logoUrl,
         }).eq('id', data.user.id)
       }
@@ -157,309 +122,276 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Check className="h-8 w-8 text-green-600" />
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Check className="h-10 w-10 text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Compte créé avec succès !</h2>
-          <p className="text-gray-600">Redirection vers votre tableau de bord...</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Bienvenue sur NA-Leer !</h2>
+          <p className="text-gray-500">Redirection vers votre tableau de bord...</p>
         </div>
       </div>
     )
   }
 
+  const stepLabels = ['Votre compte', 'Votre entreprise', 'Coordonnées']
+
   return (
     <div className="min-h-screen flex">
-      <div className="hidden lg:flex flex-1 bg-blue-600 items-center justify-center p-12">
-        <div className="text-center text-white max-w-md">
-          <FileText className="h-16 w-16 mx-auto mb-6 opacity-90" />
-          <h2 className="text-3xl font-bold mb-4">NA-Leer</h2>
-          <p className="text-blue-100 text-lg mb-8">
-            Facturation professionnelle pour entreprises africaines
+      {/* Left - Branding */}
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 items-center justify-center p-12 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-300 rounded-full blur-3xl" />
+        </div>
+        <div className="relative text-white max-w-md">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
+              <FileText className="h-7 w-7 text-white" />
+            </div>
+            <span className="text-2xl font-bold">NA-Leer</span>
+          </div>
+          <h2 className="text-3xl lg:text-4xl font-bold mb-6 leading-tight">
+            Rejoignez des centaines<br />d&apos;entreprises au Sénégal
+          </h2>
+          <p className="text-blue-100 text-lg mb-10 leading-relaxed">
+            Créez votre compte en 3 étapes simples et commencez à facturer
+            professionnellement dès aujourd&apos;hui.
           </p>
-          <div className="space-y-4 text-left">
+          <div className="space-y-4">
             {[
-              'Factures PDF avec votre logo',
-              'Paiements Wave & Orange Money',
-              'Suivi des paiements en temps réel',
-            ].map((feature, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <Check className="h-5 w-5 text-blue-300 flex-shrink-0" />
-                <span className="text-blue-100">{feature}</span>
+              'NINEA & mentions légales sur vos factures',
+              'Logo de votre entreprise sur chaque facture',
+              'Paiements Wave, Orange Money & Visa',
+              'Dashboard analytics en temps réel',
+            ].map((f) => (
+              <div key={f} className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Check className="h-3.5 w-3.5 text-white" />
+                </div>
+                <span className="text-blue-100">{f}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-8">
+      {/* Right - Form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-gray-50">
         <div className="w-full max-w-lg">
           <div className="mb-8">
             <Link href="/" className="flex items-center gap-2 mb-8">
-              <FileText className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">NA-Leer</span>
+              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center lg:hidden">
+                <FileText className="h-5 w-5 text-white" />
+              </div>
             </Link>
-            <h1 className="text-2xl font-bold text-gray-900">Créer un compte</h1>
-            <p className="text-gray-600 mt-1">Configurez votre entreprise en quelques étapes</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Créer un compte</h1>
+            <p className="text-gray-500">Configurez votre entreprise en quelques étapes</p>
           </div>
 
-          {/* Progress steps */}
-          <div className="flex items-center gap-2 mb-8">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center flex-1">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-colors ${
-                  step > s ? 'bg-green-500 text-white' : step === s ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-                }`}>
-                  {step > s ? <Check className="h-4 w-4" /> : s}
+          {/* Progress */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-3">
+              {[1, 2, 3].map((s) => (
+                <div key={s} className="flex items-center flex-1">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all duration-300 ${
+                    step > s ? 'bg-green-500 text-white scale-90' : step === s ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 scale-110' : 'bg-gray-200 text-gray-400'
+                  }`}>
+                    {step > s ? <Check className="h-4 w-4" /> : s}
+                  </div>
+                  {s < 3 && <div className={`flex-1 h-1 mx-1 rounded-full transition-all duration-300 ${step > s ? 'bg-green-500' : 'bg-gray-200'}`} />}
                 </div>
-                {s < 3 && <div className={`flex-1 h-0.5 mx-2 ${step > s ? 'bg-green-500' : 'bg-gray-200'}`} />}
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-4 mb-6 text-xs text-gray-500">
-            <span className={step === 1 ? 'text-blue-600 font-medium' : ''}>Votre compte</span>
-            <span className={step === 2 ? 'text-blue-600 font-medium' : ''}>Votre entreprise</span>
-            <span className={step === 3 ? 'text-blue-600 font-medium' : ''}>Coordonnées</span>
+              ))}
+            </div>
+            <div className="flex gap-4 text-xs">
+              {stepLabels.map((label, i) => (
+                <span key={label} className={`flex-1 text-center ${step === i + 1 ? 'text-blue-600 font-semibold' : 'text-gray-400'}`}>
+                  {label}
+                </span>
+              ))}
+            </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-sm mb-6">
+            <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm mb-6 flex items-start gap-3">
+              <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-bold">!</span>
+              </div>
               {error}
             </div>
           )}
 
-          {/* Step 1: Account */}
+          {/* Step 1 */}
           {step === 1 && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <User className="h-4 w-4 inline mr-1" />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Nom complet *
                 </label>
-                <Input
-                  value={step1.full_name}
-                  onChange={(e) => setStep1({ ...step1, full_name: e.target.value })}
-                  placeholder="Prénom et Nom"
-                  required
-                />
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Prénom et Nom" className="pl-11 h-12 rounded-xl border-gray-200" required />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <Mail className="h-4 w-4 inline mr-1" />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Email professionnel *
                 </label>
-                <Input
-                  type="email"
-                  value={step1.email}
-                  onChange={(e) => setStep1({ ...step1, email: e.target.value })}
-                  placeholder="contact@entreprise.com"
-                  required
-                />
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vous@entreprise.com" className="pl-11 h-12 rounded-xl border-gray-200" required />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Mot de passe *
                 </label>
-                <Input
-                  type="password"
-                  value={step1.password}
-                  onChange={(e) => setStep1({ ...step1, password: e.target.value })}
-                  placeholder="Min. 6 caractères"
-                  minLength={6}
-                  required
-                />
+                <div className="relative">
+                  <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 6 caractères" className="pl-11 pr-11 h-12 rounded-xl border-gray-200" minLength={6} required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
-              <Button onClick={handleNext} className="w-full" type="button">
+              <Button onClick={handleNext} className="w-full h-12 rounded-xl text-base font-semibold shadow-lg shadow-blue-200" type="button">
                 Continuer <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           )}
 
-          {/* Step 2: Company */}
+          {/* Step 2 */}
           {step === 2 && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <Building2 className="h-4 w-4 inline mr-1" />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Raison sociale / Nom de l&apos;entreprise *
                 </label>
-                <Input
-                  value={step2.company_name}
-                  onChange={(e) => setStep2({ ...step2, company_name: e.target.value })}
-                  placeholder="Ex: Diallo & Fils SARL"
-                  required
-                />
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Ex: Diallo & Fils SARL" className="pl-11 h-12 rounded-xl border-gray-200" required />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Scale className="h-4 w-4 inline mr-1" />
-                    Forme juridique
-                  </label>
-                  <select
-                    value={step2.forme_juridique}
-                    onChange={(e) => setStep2({ ...step2, forme_juridique: e.target.value })}
-                    className="w-full h-10 px-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    {FORME_JURIDIQUE.map((fj) => (
-                      <option key={fj} value={fj}>{fj}</option>
-                    ))}
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Forme juridique</label>
+                  <select value={formeJuridique} onChange={(e) => setFormeJuridique(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    {FORME_JURIDIQUE.map((fj) => <option key={fj} value={fj}>{fj}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Hash className="h-4 w-4 inline mr-1" />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     NINEA *
                   </label>
-                  <Input
-                    value={step2.ninea}
-                    onChange={(e) => setStep2({ ...step2, ninea: e.target.value })}
-                    placeholder="012345678"
-                    maxLength={13}
-                    required
-                  />
-                  <p className="text-xs text-gray-400 mt-1">Numéro d&apos;identification fiscale (13 chiffres)</p>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input value={ninea} onChange={(e) => setNinea(e.target.value)} placeholder="012345678" maxLength={13} className="pl-11 h-12 rounded-xl border-gray-200" required />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Numéro d&apos;identification fiscale</p>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  RCCM (Registre du Commerce)
-                </label>
-                <Input
-                  value={step2.rccm}
-                  onChange={(e) => setStep2({ ...step2, rccm: e.target.value })}
-                  placeholder="SN/DKR/2024/B/1234"
-                />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">RCCM (Registre du Commerce)</label>
+                <Input value={rccm} onChange={(e) => setRccm(e.target.value)} placeholder="SN/DKR/2024/B/1234" className="h-12 rounded-xl border-gray-200" />
               </div>
 
-              {/* Logo upload */}
+              {/* Logo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Logo de l&apos;entreprise
-                </label>
-                <div
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
-                  onClick={() => fileInputRef.current?.click()}
-                >
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Logo de l&apos;entreprise</label>
+                <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-400 transition-colors cursor-pointer bg-white" onClick={() => fileInputRef.current?.click()}>
                   {logoPreview ? (
                     <div className="relative inline-block">
                       <img src={logoPreview} alt="Logo" className="h-20 object-contain mx-auto" />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setLogoPreview(null); setLogoFile(null) }}
-                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); setLogoPreview(null); setLogoFile(null) }} className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow"><X className="h-3 w-3" /></button>
                     </div>
                   ) : (
                     <>
-                      <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600">Cliquez pour ajouter votre logo</p>
-                      <p className="text-xs text-gray-400 mt-1">PNG, JPG • Max 2 Mo</p>
+                      <Upload className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500 font-medium">Ajouter votre logo</p>
+                      <p className="text-xs text-gray-400 mt-1">PNG, JPG • Max 2 Mo • Affiché sur vos factures</p>
                     </>
                   )}
                 </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                  className="hidden"
-                />
-                <p className="text-xs text-gray-400 mt-1">Sera affiché sur vos factures</p>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
               </div>
 
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setStep(1)} type="button" className="flex-1">
+              <div className="flex gap-3 pt-2">
+                <Button variant="outline" onClick={() => setStep(1)} type="button" className="flex-1 h-12 rounded-xl font-semibold">
                   <ArrowLeft className="h-4 w-4 mr-2" /> Retour
                 </Button>
-                <Button onClick={handleNext} className="flex-1" type="button">
+                <Button onClick={handleNext} className="flex-1 h-12 rounded-xl font-semibold shadow-lg shadow-blue-200" type="button">
                   Continuer <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Step 3: Contact */}
+          {/* Step 3 */}
           {step === 3 && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <MapPin className="h-4 w-4 inline mr-1" />
-                  Adresse du siège
-                </label>
-                <Input
-                  value={step3.company_address}
-                  onChange={(e) => setStep3({ ...step3, company_address: e.target.value })}
-                  placeholder="123 Avenue de l'Indépendance"
-                />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Adresse du siège</label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} placeholder="123 Avenue de l'Indépendance" className="pl-11 h-12 rounded-xl border-gray-200" />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Ville *
-                  </label>
-                  <select
-                    value={step3.ville}
-                    onChange={(e) => setStep3({ ...step3, ville: e.target.value })}
-                    className="w-full h-10 px-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  >
-                    {VILLES_SENEGAL.map((v) => (
-                      <option key={v} value={v}>{v}</option>
-                    ))}
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Ville *</label>
+                  <select value={ville} onChange={(e) => setVille(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    {VILLES_SENEGAL.map((v) => <option key={v} value={v}>{v}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Globe className="h-4 w-4 inline mr-1" />
-                    Pays
-                  </label>
-                  <Input value={step3.pays} disabled className="bg-gray-50" />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Pays</label>
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input value={pays} disabled className="pl-11 h-12 rounded-xl border-gray-200 bg-gray-50" />
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Phone className="h-4 w-4 inline mr-1" />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Téléphone *
                   </label>
-                  <Input
-                    value={step3.company_phone}
-                    onChange={(e) => setStep3({ ...step3, company_phone: e.target.value })}
-                    placeholder="+221 77 123 45 67"
-                    required
-                  />
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input value={companyPhone} onChange={(e) => setCompanyPhone(e.target.value)} placeholder="+221 77 123 45 67" className="pl-11 h-12 rounded-xl border-gray-200" required />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <Mail className="h-4 w-4 inline mr-1" />
-                    Email professionnel
-                  </label>
-                  <Input
-                    type="email"
-                    value={step3.company_email}
-                    onChange={(e) => setStep3({ ...step3, company_email: e.target.value })}
-                    placeholder="contact@entreprise.com"
-                  />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email pro</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input type="email" value={companyEmail} onChange={(e) => setCompanyEmail(e.target.value)} placeholder="contact@entreprise.com" className="pl-11 h-12 rounded-xl border-gray-200" />
+                  </div>
                 </div>
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button variant="outline" onClick={() => setStep(2)} type="button" className="flex-1">
+                <Button variant="outline" onClick={() => setStep(2)} type="button" className="flex-1 h-12 rounded-xl font-semibold">
                   <ArrowLeft className="h-4 w-4 mr-2" /> Retour
                 </Button>
-                <Button onClick={handleSubmit} className="flex-1" disabled={loading}>
-                  {loading ? 'Création...' : 'Créer mon compte'}
+                <Button onClick={handleSubmit} className="flex-1 h-12 rounded-xl font-semibold shadow-lg shadow-blue-200" disabled={loading}>
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Création...
+                    </span>
+                  ) : 'Créer mon compte'}
                 </Button>
               </div>
             </div>
           )}
 
-          <p className="text-center text-sm text-gray-600 mt-6">
-            Déjà un compte ?{' '}
-            <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-              Se connecter
-            </Link>
-          </p>
+          <div className="mt-8 text-center">
+            <p className="text-sm text-gray-500">
+              Déjà un compte ?{' '}
+              <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold">
+                Se connecter
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
