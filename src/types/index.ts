@@ -75,6 +75,9 @@ export interface Profile {
   pays: string | null
   logo_url: string | null
   currency: string
+  fedaipay_api_key: string | null
+  fedaipay_secret_key: string | null
+  fedaipay_environment: string | null
   created_at: string
   updated_at: string
 }

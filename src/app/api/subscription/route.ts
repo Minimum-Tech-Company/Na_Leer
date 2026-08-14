@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createCheckoutSession } from '@/lib/dexchange'
+import { createTransaction, getTransactionToken, FedaPayConfig } from '@/lib/fedapay'
 
 export async function POST(request: NextRequest) {
   try {
-    const { plan_id, amount, customer_name, customer_email, phone } = await request.json()
+    const { plan_id, amount, customer_name, customer_email } = await request.json()
 
-    if (!plan_id || !amount || !phone) {
-      return NextResponse.json({ error: 'Paramètres manquants: plan_id, amount, phone requis' }, { status: 400 })
+    if (!plan_id || !amount) {
+      return NextResponse.json({ error: 'Paramètres manquants: plan_id, amount requis' }, { status: 400 })
+    }
+
+    // Get platform FedaPay keys from env
+    const secretKey = process.env.FEDAPAY_SECRET_KEY
+    const environment = (process.env.FEDAPAY_ENVIRONMENT as 'sandbox' | 'live') || 'sandbox'
+
+    if (!secretKey) {
+      return NextResponse.json({ error: 'Clé API FedaPay non configurée sur le serveur' }, { status: 500 })
     }
 
     let userId = 'guest'
@@ -17,41 +25,30 @@ export async function POST(request: NextRequest) {
       userId = user.id
     }
 
-    let formattedPhone = phone.replace(/\s/g, '')
-    if (formattedPhone.startsWith('+')) {
-      formattedPhone = formattedPhone.substring(1)
-    }
-    if (!formattedPhone.startsWith('221')) {
-      formattedPhone = `221${formattedPhone}`
-    }
-
-    const reference = `SUB-${userId.substring(0, 8)}-${plan_id}-${Date.now()}`
+    const config: FedaPayConfig = { secretKey, environment }
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://na-leer.vercel.app'
 
-    console.log('Subscription API: Creating session with reference:', reference, 'amount:', amount, 'phone:', formattedPhone)
-
-    const session = await createCheckoutSession({
-      reference,
-      itemName: `Abonnement NA-Leer - Plan ${plan_id}`,
+    const transaction = await createTransaction(config, {
+      description: `Abonnement NA-Leer - Plan ${plan_id}`,
       amount,
       currency: 'XOF',
-      successUrl: `${appUrl}/pricing?success=true`,
-      failureUrl: `${appUrl}/pricing?cancelled=true`,
-      webhookUrl: `${appUrl}/api/webhooks/dexchange`,
+      callbackUrl: `${appUrl}/api/webhooks/fedapay`,
+      customerEmail: customer_email || undefined,
+      customerFirstname: customer_name?.split(' ')[0] || undefined,
+      customerLastname: customer_name?.split(' ').slice(1).join(' ') || undefined,
       metadata: {
         type: 'subscription',
         user_id: userId,
         plan_id,
-        phone: formattedPhone,
       },
     })
 
-    console.log('Subscription API: Session created:', JSON.stringify(session))
+    const tokenData = await getTransactionToken(config, transaction.id)
 
     return NextResponse.json({
-      session_id: session.reference || reference,
-      payment_url: session.payment_url,
-      reference,
+      transaction_id: transaction.id,
+      payment_url: tokenData.url,
+      reference: transaction.reference,
     })
   } catch (error: any) {
     console.error('Subscription API error:', error)

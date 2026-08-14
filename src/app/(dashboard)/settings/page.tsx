@@ -115,6 +115,9 @@ export default function SettingsPage() {
         pays: profile.pays,
         currency: profile.currency,
         logo_url: logoUrl,
+        fedaipay_api_key: profile.fedaipay_api_key,
+        fedaipay_secret_key: profile.fedaipay_secret_key,
+        fedaipay_environment: profile.fedaipay_environment,
       })
       .eq('id', profile.id)
 
@@ -339,6 +342,78 @@ export default function SettingsPage() {
               className="hidden"
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* FedaPay Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Configuration des paiements (FedaPay)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+            <p className="font-medium mb-1">Connectez votre compte FedaPay</p>
+            <p>
+              Pour recevoir les paiements de vos factures directement sur votre compte, créez un compte{' '}
+              <a href="https://live.fedapay.com/register" target="_blank" rel="noopener noreferrer" className="underline font-medium">
+                FedaPay
+              </a>{' '}
+              et entrez vos clés API ci-dessous. Les paiements de vos clients iront directement sur votre compte Wave, Orange Money ou bancaire.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Environnement
+            </label>
+            <select
+              value={profile.fedaipay_environment || 'sandbox'}
+              onChange={(e) => setProfile({ ...profile, fedaipay_environment: e.target.value })}
+              className="w-full h-10 px-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="sandbox">Sandbox (tests)</option>
+              <option value="live">Production (réel)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Clé API (publique)
+            </label>
+            <Input
+              value={profile.fedaipay_api_key || ''}
+              onChange={(e) => setProfile({ ...profile, fedaipay_api_key: e.target.value })}
+              placeholder="pk_live_..."
+              type="password"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Vous la trouvez dans votre dashboard FedaPay → Paramètres → API
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Clé secrète (privée)
+            </label>
+            <Input
+              value={profile.fedaipay_secret_key || ''}
+              onChange={(e) => setProfile({ ...profile, fedaipay_secret_key: e.target.value })}
+              placeholder="sk_live_..."
+              type="password"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Ne partagez jamais cette clé. Elle est utilisée pour créer les paiements.
+            </p>
+          </div>
+
+          {profile.fedaipay_secret_key && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
+              ✓ FedaPay configuré ({profile.fedaipay_environment || 'sandbox'})
+            </div>
+          )}
         </CardContent>
       </Card>
 
