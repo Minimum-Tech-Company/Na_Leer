@@ -78,12 +78,13 @@ export default function LandingPage() {
               </div>
               <span className="text-xl font-bold text-gray-900">NA-Leer</span>
             </div>
-            <div className="flex items-center gap-3">
-              <Link href="/login" className="text-gray-600 hover:text-gray-900 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-2">
+              <Link href="/login" className="text-gray-600 hover:text-gray-900 text-sm font-medium px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
                 Connexion
               </Link>
-              <Link href="/register" className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm shadow-blue-200">
-                Commencer gratuitement
+              <Link href="/register" className="bg-blue-600 text-white px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm shadow-blue-200">
+                <span className="hidden sm:inline">Commencer gratuitement</span>
+                <span className="sm:hidden">Commencer</span>
               </Link>
             </div>
           </div>
@@ -91,19 +92,19 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
+      <section className="pt-24 pb-12 lg:pt-40 lg:pb-32 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
-                <Zap className="h-4 w-4" />
+              <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium mb-4 sm:mb-6">
+                <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Plateforme de facturation n°1 en Afrique de l&apos;Ouest
               </div>
-              <h1 className="text-4xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
+              <h1 className="text-3xl sm:text-4xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-4 sm:mb-6">
                 Facturez &amp; encaissez
                 <span className="text-blue-600"> en quelques clics</span>
               </h1>
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+              <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 leading-relaxed">
                 Créez des factures professionnelles, envoyez-les par email et acceptez les paiements
                 Wave, Orange Money et carte bancaire. Tout est simple, rapide et adapté au Sénégal.
               </p>
@@ -133,7 +134,7 @@ export default function LandingPage() {
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-100 to-purple-100 rounded-3xl blur-3xl opacity-40" />
-              <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-8">
+              <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 sm:p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
                     <Receipt className="h-5 w-5 text-white" />
@@ -247,21 +248,21 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section className="py-20 lg:py-28">
+      <section className="py-12 lg:py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 lg:mb-16">
             <span className="text-blue-600 font-semibold text-sm uppercase tracking-wider">Fonctionnalités</span>
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mt-3 mb-4">Tout ce dont vous avez besoin</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Un outil de facturation complet, pensé pour les PME africaines</p>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mt-3 mb-4">Tout ce dont vous avez besoin</h2>
+            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">Un outil de facturation complet, pensé pour les PME africaines</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {features.map((f) => (
-              <div key={f.title} className="group p-8 rounded-2xl border border-gray-100 hover:border-blue-100 hover:shadow-lg transition-all duration-300">
-                <div className={`w-12 h-12 ${f.color} rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
-                  <f.icon className="h-6 w-6" />
+              <div key={f.title} className="group p-5 sm:p-8 rounded-2xl border border-gray-100 hover:border-blue-100 hover:shadow-lg transition-all duration-300">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 ${f.color} rounded-xl flex items-center justify-center mb-4 sm:mb-5 group-hover:scale-110 transition-transform`}>
+                  <f.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{f.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{f.desc}</p>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{f.title}</h3>
+                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -269,21 +270,21 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section id="how" className="py-20 lg:py-28 bg-gray-50">
+      <section id="how" className="py-12 lg:py-28 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 lg:mb-16">
             <span className="text-blue-600 font-semibold text-sm uppercase tracking-wider">Processus</span>
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mt-3 mb-4">Comment ça marche</h2>
-            <p className="text-lg text-gray-600">4 étapes pour commencer à facturer</p>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mt-3 mb-4">Comment ça marche</h2>
+            <p className="text-base sm:text-lg text-gray-600">4 étapes pour commencer à facturer</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
             {steps.map((s) => (
               <div key={s.num} className="text-center">
-                <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-5 text-white font-bold text-xl shadow-lg shadow-blue-200">
+                <div className="w-11 h-11 sm:w-14 sm:h-14 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-5 text-white font-bold text-lg sm:text-xl shadow-lg shadow-blue-200">
                   {s.num}
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{s.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{s.desc}</p>
+                <h3 className="text-sm sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">{s.title}</h3>
+                <p className="text-xs sm:text-base text-gray-600 leading-relaxed">{s.desc}</p>
               </div>
             ))}
           </div>
@@ -291,15 +292,15 @@ export default function LandingPage() {
       </section>
 
       {/* Dashboard preview */}
-      <section className="py-20 lg:py-28">
+      <section className="py-12 lg:py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             <div>
               <span className="text-blue-600 font-semibold text-sm uppercase tracking-wider">Tableau de bord</span>
-              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mt-3 mb-6">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mt-3 mb-4 sm:mb-6">
                 Suivez vos revenus<br />en temps réel
               </h2>
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+              <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 leading-relaxed">
                 Un dashboard complet avec vos KPI, graphiques de revenus, répartition des factures
                 et liste des paiements récents. Vous savez toujours où en est votre business.
               </p>
@@ -360,25 +361,25 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section className="py-20 lg:py-28 bg-gray-50">
+      <section className="py-12 lg:py-28 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 lg:mb-16">
             <span className="text-blue-600 font-semibold text-sm uppercase tracking-wider">Tarifs</span>
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mt-3 mb-4">Simples et transparents</h2>
-            <p className="text-lg text-gray-600">Commencez gratuitement, évoluez quand vous êtes prêt</p>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mt-3 mb-4">Simples et transparents</h2>
+            <p className="text-base sm:text-lg text-gray-600">Commencez gratuitement, évoluez quand vous êtes prêt</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
             {/* Free */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-5">
-                <Zap className="h-6 w-6 text-gray-600" />
+            <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4 sm:mb-5">
+                <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-1">Gratuit</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-extrabold text-gray-900">0</span>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Gratuit</h3>
+              <div className="mb-4 sm:mb-6">
+                <span className="text-3xl sm:text-4xl font-extrabold text-gray-900">0</span>
                 <span className="text-gray-500 ml-1">FCFA/mois</span>
               </div>
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-2.5 mb-6 sm:mb-8">
                 {['5 factures/mois', '5 clients', 'Export PDF', '1 utilisateur'].map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
                     <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" /> {f}
@@ -391,19 +392,19 @@ export default function LandingPage() {
             </div>
 
             {/* Pro */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg border-2 border-blue-600 relative scale-105">
+            <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-lg border-2 border-blue-600 relative md:scale-105">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
-                ⭐ Populaire
+                Populaire
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-5">
-                <Star className="h-6 w-6 text-blue-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 sm:mb-5">
+                <Star className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-1">Pro</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-extrabold text-gray-900">15 000</span>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Pro</h3>
+              <div className="mb-4 sm:mb-6">
+                <span className="text-3xl sm:text-4xl font-extrabold text-gray-900">15 000</span>
                 <span className="text-gray-500 ml-1">FCFA/mois</span>
               </div>
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-2.5 mb-6 sm:mb-8">
                 {['Factures illimitées', 'Clients illimités', 'Paiements Wave / OM / Visa', 'Relances automatiques', 'Support prioritaire'].map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
                     <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" /> {f}
@@ -416,16 +417,16 @@ export default function LandingPage() {
             </div>
 
             {/* Business */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-5">
-                <Building2 className="h-6 w-6 text-purple-600" />
+            <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 sm:mb-5">
+                <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-1">Business</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-extrabold text-gray-900">35 000</span>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Business</h3>
+              <div className="mb-4 sm:mb-6">
+                <span className="text-3xl sm:text-4xl font-extrabold text-gray-900">35 000</span>
                 <span className="text-gray-500 ml-1">FCFA/mois</span>
               </div>
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-2.5 mb-6 sm:mb-8">
                 {['Tout dans Pro', 'Multi-utilisateurs', 'API & intégrations', 'Support dédié', 'Personnalisation avancée'].map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
                     <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" /> {f}
@@ -441,24 +442,24 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 lg:py-28">
+      <section className="py-12 lg:py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10 lg:mb-16">
             <span className="text-blue-600 font-semibold text-sm uppercase tracking-wider">Témoignages</span>
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mt-3 mb-4">Ils nous font confiance</h2>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mt-3 mb-4">Ils nous font confiance</h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
             {testimonials.map((t) => (
-              <div key={t.name} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex gap-1 mb-4">
+              <div key={t.name} className="bg-white p-5 sm:p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex gap-1 mb-3 sm:mb-4">
                   {[1, 2, 3, 4, 5].map((s) => (
                     <Star key={s} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                   ))}
                 </div>
-                <p className="text-gray-600 mb-6 leading-relaxed">&quot;{t.text}&quot;</p>
+                <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">&quot;{t.text}&quot;</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-semibold text-blue-600">{t.name.charAt(0)}</span>
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-xs sm:text-sm font-semibold text-blue-600">{t.name.charAt(0)}</span>
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-900">{t.name}</p>
@@ -472,26 +473,26 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 lg:py-28 bg-blue-600">
+      <section className="py-12 lg:py-28 bg-blue-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 sm:mb-6">
             Prêt à simplifier votre facturation ?
           </h2>
-          <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto">
+          <p className="text-blue-100 text-base sm:text-lg mb-6 sm:mb-8 max-w-2xl mx-auto">
             Rejoignez des centaines d&apos;entreprises sénégalaises qui facturent avec NA-Leer.
             Commencez gratuitement, sans engagement.
           </p>
-          <Link href="/register" className="bg-white text-blue-600 px-10 py-4 rounded-xl text-base font-bold hover:bg-blue-50 transition-all inline-flex items-center gap-2 shadow-lg">
+          <Link href="/register" className="bg-white text-blue-600 px-6 sm:px-10 py-3 sm:py-4 rounded-xl text-sm sm:text-base font-bold hover:bg-blue-50 transition-all inline-flex items-center gap-2 shadow-lg">
             Créer mon compte gratuit
-            <ArrowRight className="h-5 w-5" />
+            <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
           </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 bg-gray-900">
+      <footer className="py-8 lg:py-12 bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
