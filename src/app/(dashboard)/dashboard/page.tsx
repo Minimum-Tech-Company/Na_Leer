@@ -107,17 +107,22 @@ export default function DashboardPage() {
   const dailyRevenue = useMemo(() => {
     const days: { label: string; dateStr: string; amount: number }[] = []
     const today = new Date()
+    today.setHours(0, 0, 0, 0)
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today)
       d.setDate(d.getDate() - i + dayOffset)
-      const year = d.getFullYear()
-      const month = String(d.getMonth() + 1).padStart(2, '0')
-      const day = String(d.getDate()).padStart(2, '0')
-      const dateStr = `${year}-${month}-${day}`
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const dd = String(d.getDate()).padStart(2, '0')
+      const dateStr = `${y}-${m}-${dd}`
       const dayRevenue = paid
         .filter(inv => {
-          const paidDate = inv.paid_at || inv.created_at
-          return paidDate && paidDate.startsWith(dateStr)
+          const raw = inv.paid_at || inv.created_at
+          if (!raw) return false
+          const pd = new Date(raw)
+          pd.setHours(0, 0, 0, 0)
+          const pStr = `${pd.getFullYear()}-${String(pd.getMonth() + 1).padStart(2, '0')}-${String(pd.getDate()).padStart(2, '0')}`
+          return pStr === dateStr
         })
         .reduce((sum, inv) => sum + Number(inv.total), 0)
       days.push({
