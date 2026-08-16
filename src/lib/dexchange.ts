@@ -40,7 +40,6 @@ export async function createCheckoutSession(params: CreateCheckoutParams) {
   })
 
   const data = await response.json()
-  console.log('DEXCHANGE createCheckoutSession:', JSON.stringify(data))
   if (data.statusCode && data.statusCode >= 400) {
     throw new Error(data.message || 'Erreur création session DEXCHANGE')
   }
@@ -55,5 +54,7 @@ export function verifyWebhookSignature(payload: string, signature: string): bool
   const hmac = crypto.createHmac('sha256', secret)
   hmac.update(payload)
   const computed = hmac.digest('hex')
-  return computed === signature
+
+  if (computed.length !== signature.length) return false
+  return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(signature))
 }

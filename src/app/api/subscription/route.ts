@@ -4,10 +4,10 @@ import { createCheckoutSession } from '@/lib/dexchange'
 
 export async function POST(request: NextRequest) {
   try {
-    const { plan_id, amount, customer_name, customer_email } = await request.json()
+    const { plan_id, customer_name, customer_email } = await request.json()
 
-    if (!plan_id || !amount) {
-      return NextResponse.json({ error: 'Paramètres manquants: plan_id, amount requis' }, { status: 400 })
+    if (!plan_id) {
+      return NextResponse.json({ error: 'Paramètre manquant: plan_id requis' }, { status: 400 })
     }
 
     let userId = 'guest'
@@ -16,6 +16,18 @@ export async function POST(request: NextRequest) {
     if (user) {
       userId = user.id
     }
+
+    const { data: plan } = await supabase
+      .from('plans')
+      .select('price_xof, name')
+      .eq('id', plan_id)
+      .single()
+
+    if (!plan) {
+      return NextResponse.json({ error: 'Plan invalide' }, { status: 400 })
+    }
+
+    const amount = plan.price_xof
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://na-leer.vercel.app'
     const reference = `SUB-${plan_id}-${Date.now()}`

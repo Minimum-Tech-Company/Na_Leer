@@ -9,18 +9,19 @@ export async function POST(request: NextRequest) {
     const rawBody = await request.text()
     const signature = request.headers.get('x-fedapay-signature') || ''
 
-    // Verify webhook signature if secret is configured
+    // Verify webhook signature - mandatory
     const webhookSecret = process.env.FEDAPAY_WEBHOOK_SECRET
-    if (webhookSecret) {
-      const isValid = verifyWebhookSignature(rawBody, signature, webhookSecret)
-      if (!isValid) {
-        console.error('Invalid FedaPay webhook signature')
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
-      }
+    if (!webhookSecret) {
+      console.error('FEDAPAY_WEBHOOK_SECRET not configured - rejecting webhook')
+      return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+    }
+    const isValid = verifyWebhookSignature(rawBody, signature, webhookSecret)
+    if (!isValid) {
+      console.error('Invalid FedaPay webhook signature')
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
     const body = JSON.parse(rawBody)
-    console.log('FedaPay webhook received:', JSON.stringify(body))
 
     const eventName = body.name
     const transaction = body.object?.data || body.data

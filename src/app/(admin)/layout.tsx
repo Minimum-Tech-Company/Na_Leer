@@ -38,31 +38,22 @@ export default function AdminLayout({
 
   useEffect(() => {
     const checkAdmin = async () => {
-      // Check if admin session exists
-      const isAdminAuth = sessionStorage.getItem('admin_authenticated')
-      if (!isAdminAuth) {
+      const res = await fetch('/api/admin/auth/verify')
+      if (!res.ok) {
         router.push('/admin/login')
         return
       }
 
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        if (data) setProfile(data)
       }
 
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (!data || !data.is_admin) {
-        router.push('/dashboard')
-        return
-      }
-
-      setProfile(data)
       setAuthenticated(true)
       setLoading(false)
     }
@@ -71,9 +62,9 @@ export default function AdminLayout({
   }, [supabase, router])
 
   const handleLogout = async () => {
-    sessionStorage.removeItem('admin_authenticated')
+    await fetch('/api/admin/auth/logout', { method: 'POST' })
     await supabase.auth.signOut()
-    router.push('/login')
+    router.push('/admin/login')
   }
 
   if (loading || !authenticated) {

@@ -2,6 +2,15 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 export async function sendInvoiceEmail({
   to,
   invoiceNumber,
@@ -36,21 +45,21 @@ export async function sendInvoiceEmail({
           <div style="background-color: #f8f9fa; padding: 30px; border: 1px solid #e9ecef;">
             <h2 style="color: #333;">Nouvelle facture</h2>
             <p>Bonjour,</p>
-            <p>Vous avez reçu une facture de <strong>${companyName}</strong>.</p>
+            <p>Vous avez reçu une facture de <strong>${escapeHtml(companyName)}</strong>.</p>
             
             <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e9ecef;">
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td style="padding: 8px 0; color: #666;">Numéro:</td>
-                  <td style="padding: 8px 0; font-weight: bold;">${invoiceNumber}</td>
+                  <td style="padding: 8px 0; font-weight: bold;">${escapeHtml(invoiceNumber)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #666;">Montant:</td>
-                  <td style="padding: 8px 0; font-weight: bold; font-size: 18px; color: #2980b9;">${amount}</td>
+                  <td style="padding: 8px 0; font-weight: bold; font-size: 18px; color: #2980b9;">${escapeHtml(amount)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #666;">Échéance:</td>
-                  <td style="padding: 8px 0;">${dueDate}</td>
+                  <td style="padding: 8px 0;">${escapeHtml(dueDate)}</td>
                 </tr>
               </table>
             </div>
@@ -109,9 +118,9 @@ export async function sendPaymentReminder({
           </div>
           <div style="background-color: #f8f9fa; padding: 30px; border: 1px solid #e9ecef;">
             <p>Bonjour,</p>
-            <p>Nous vous informons que la facture <strong>${invoiceNumber}</strong> d'un montant de <strong>${amount}</strong> est arrivée à échéance le <strong>${dueDate}</strong>.</p>
+            <p>Nous vous informons que la facture <strong>${escapeHtml(invoiceNumber)}</strong> d'un montant de <strong>${escapeHtml(amount)}</strong> est arrivée à échéance le <strong>${escapeHtml(dueDate)}</strong>.</p>
             <p>Merci de procéder au règlement dans les meilleurs délais.</p>
-            <p style="color: #666;">Cordialement,<br><strong>${companyName}</strong></p>
+            <p style="color: #666;">Cordialement,<br><strong>${escapeHtml(companyName)}</strong></p>
           </div>
         </body>
         </html>

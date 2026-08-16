@@ -31,7 +31,6 @@ export default function AdminLoginPage() {
       const data = await response.json()
 
       if (data.success) {
-        sessionStorage.setItem('admin_authenticated', 'true')
         router.push('/admin')
       } else {
         setError('Mot de passe admin incorrect')

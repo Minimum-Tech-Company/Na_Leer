@@ -11,11 +11,13 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get('x-dexchange-signature') || ''
 
     const secret = process.env.DEXCHANGE_WEBHOOK_SECRET
-    if (secret) {
-      if (!verifyWebhookSignature(rawBody, signature)) {
-        console.error('Invalid Dexchange webhook signature')
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
-      }
+    if (!secret) {
+      console.error('DEXCHANGE_WEBHOOK_SECRET not configured - rejecting webhook')
+      return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+    }
+    if (!verifyWebhookSignature(rawBody, signature)) {
+      console.error('Invalid Dexchange webhook signature')
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
     const supabase = await createClient()
