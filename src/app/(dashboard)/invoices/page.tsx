@@ -116,26 +116,26 @@ export default function InvoicesPage() {
       </div>
 
       {/* Stats bar */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex gap-3 overflow-x-auto pb-2">
         {[
-          { key: 'all', label: 'Toutes', count: stats.total, color: 'bg-gray-600' },
-          { key: 'draft', label: 'Brouillons', count: stats.draft, color: 'bg-gray-400' },
-          { key: 'sent', label: 'Envoyées', count: stats.sent, color: 'bg-blue-500' },
-          { key: 'paid', label: 'Payées', count: stats.paid, color: 'bg-green-500' },
-          { key: 'overdue', label: 'En retard', count: stats.overdue, color: 'bg-red-500' },
+          { key: 'all', label: 'Toutes', count: stats.total, color: 'bg-gray-600', activeBg: 'bg-gray-600' },
+          { key: 'draft', label: 'Brouillons', count: stats.draft, color: 'bg-gray-400', activeBg: 'bg-gray-500' },
+          { key: 'sent', label: 'Envoyées', count: stats.sent, color: 'bg-blue-500', activeBg: 'bg-blue-600' },
+          { key: 'paid', label: 'Payées', count: stats.paid, color: 'bg-green-500', activeBg: 'bg-green-600' },
+          { key: 'overdue', label: 'En retard', count: stats.overdue, color: 'bg-red-500', activeBg: 'bg-red-600' },
         ].map(s => (
           <button
             key={s.key}
             onClick={() => setFilter(s.key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
               filter === s.key
-                ? `${s.color} text-white shadow-lg`
-                : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                ? `${s.activeBg} text-white shadow-lg`
+                : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50'
             }`}
           >
             <span>{s.label}</span>
-            <span className={`px-1.5 py-0.5 rounded-md text-xs ${
-              filter === s.key ? 'bg-white/20' : 'bg-gray-100'
+            <span className={`inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full text-xs font-bold ${
+              filter === s.key ? 'bg-white/25 text-white' : 'bg-gray-100 text-gray-600'
             }`}>
               {s.count}
             </span>
