@@ -285,9 +285,13 @@ export default function DashboardLayout({
         </div>
 
         {/* Page content */}
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="p-4 sm:p-6 lg:p-8 min-h-[calc(100vh-4rem)]">
           {children}
         </main>
+
+        <footer className="border-t bg-white px-4 sm:px-6 lg:px-8 py-4 text-center text-xs text-gray-400">
+          by Minimum Tech Company
+        </footer>
       </div>
     </div>
   )

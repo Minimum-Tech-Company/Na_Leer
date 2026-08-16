@@ -168,6 +168,9 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      <div className="text-center text-xs text-gray-400 mt-6">
+        by Minimum Tech Company
+      </div>
     </div>
   )
 }
