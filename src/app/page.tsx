@@ -410,7 +410,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/register" className="block text-center bg-blue-600 text-white px-4 py-3 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
+              <Link href="/pricing" className="block text-center bg-blue-600 text-white px-4 py-3 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
                 Choisir Pro
               </Link>
             </div>
@@ -432,8 +432,8 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/register" className="block text-center bg-gray-100 text-gray-900 px-4 py-3 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors">
-                Contacter-nous
+              <Link href="/pricing" className="block text-center bg-purple-600 text-white px-4 py-3 rounded-xl text-sm font-semibold hover:bg-purple-700 transition-colors shadow-lg shadow-purple-200">
+                Choisir Business
               </Link>
             </div>
           </div>

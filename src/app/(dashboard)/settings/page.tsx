@@ -557,7 +557,7 @@ export default function SettingsPage() {
             </div>
             {currentPlan.id === 'free' && (
               <Link href="/pricing">
-                <Button className="w-full">Passer au plan Pro</Button>
+                <Button className="w-full">Voir les plans payants</Button>
               </Link>
             )}
             {subscription && (
