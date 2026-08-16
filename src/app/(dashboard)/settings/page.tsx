@@ -66,7 +66,7 @@ export default function SettingsPage() {
         setSubscription(subData)
         setCurrentPlan(subData.plans)
       } else {
-        setCurrentPlan({ id: 'free', name: 'Free', price_xof: 0, max_invoices: -1, max_clients: 5, has_online_payments: false, has_auto_reminders: false, has_multi_users: false, has_api_access: false })
+        setCurrentPlan({ id: 'free', name: 'Free', price_xof: 0, max_invoices: 5, max_clients: 5, has_online_payments: false, has_auto_reminders: false, has_multi_users: false, has_api_access: false })
       }
 
       const fedapayRes = await fetch('/api/user/fedapay-keys')
@@ -573,7 +573,7 @@ export default function SettingsPage() {
                   })
                   if (res.ok) {
                     setSubscription(null)
-                    setCurrentPlan({ id: 'free', name: 'Free', price_xof: 0, max_invoices: -1, max_clients: 5, has_online_payments: false, has_auto_reminders: false, has_multi_users: false, has_api_access: false })
+                    setCurrentPlan({ id: 'free', name: 'Free', price_xof: 0, max_invoices: 5, max_clients: 5, has_online_payments: false, has_auto_reminders: false, has_multi_users: false, has_api_access: false })
                   }
                 }}
               >

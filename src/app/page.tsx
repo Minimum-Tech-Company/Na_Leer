@@ -379,7 +379,7 @@ export default function LandingPage() {
                 <span className="text-gray-500 ml-1">FCFA/mois</span>
               </div>
               <ul className="space-y-3 mb-8">
-                {['Factures illimitées', '5 clients', 'Export PDF', '1 utilisateur'].map((f) => (
+                {['5 factures/mois', '5 clients', 'Export PDF', '1 utilisateur'].map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
                     <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" /> {f}
                   </li>

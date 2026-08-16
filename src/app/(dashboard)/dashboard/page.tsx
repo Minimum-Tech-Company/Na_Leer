@@ -107,10 +107,8 @@ export default function DashboardPage() {
   const dailyRevenue = useMemo(() => {
     const days: { label: string; dateStr: string; amount: number }[] = []
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(today)
-      d.setDate(d.getDate() - i + dayOffset)
+      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i + dayOffset)
       const y = d.getFullYear()
       const m = String(d.getMonth() + 1).padStart(2, '0')
       const dd = String(d.getDate()).padStart(2, '0')
@@ -119,10 +117,7 @@ export default function DashboardPage() {
         .filter(inv => {
           const raw = inv.paid_at || inv.created_at
           if (!raw) return false
-          const pd = new Date(raw)
-          pd.setHours(0, 0, 0, 0)
-          const pStr = `${pd.getFullYear()}-${String(pd.getMonth() + 1).padStart(2, '0')}-${String(pd.getDate()).padStart(2, '0')}`
-          return pStr === dateStr
+          return raw.substring(0, 10) === dateStr
         })
         .reduce((sum, inv) => sum + Number(inv.total), 0)
       days.push({
@@ -266,19 +261,22 @@ export default function DashboardPage() {
                   Semaine suivante →
                 </button>
               </div>
-              <div ref={scrollRef} className="flex items-end gap-2 h-32">
-                {dailyRevenue.map((day, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <span className="text-[9px] text-gray-500 font-medium">
-                      {day.amount > 0 ? formatCurrency(day.amount) : ''}
-                    </span>
-                    <div
-                      className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600 cursor-pointer"
-                      style={{ height: day.amount > 0 ? `${Math.max((day.amount / maxDailyRevenue) * 100, 4)}%` : '2px' }}
-                      title={`${day.dateStr} — ${formatCurrency(day.amount)}`}
-                    />
-                  </div>
-                ))}
+              <div ref={scrollRef} className="flex items-end gap-2 h-40">
+                {dailyRevenue.map((day, i) => {
+                  const pct = maxDailyRevenue > 0 ? (day.amount / maxDailyRevenue) * 100 : 0
+                  return (
+                    <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
+                      <span className="text-[9px] text-gray-500 font-medium mb-1">
+                        {day.amount > 0 ? formatCurrency(day.amount) : ''}
+                      </span>
+                      <div
+                        className="w-full bg-blue-500 rounded-t hover:bg-blue-600 cursor-pointer transition-colors"
+                        style={{ height: `${Math.max(pct, 3)}%` }}
+                        title={`${day.dateStr} — ${formatCurrency(day.amount)}`}
+                      />
+                    </div>
+                  )
+                })}
               </div>
               <div className="flex gap-2 mt-2">
                 {dailyRevenue.map((day, i) => (
