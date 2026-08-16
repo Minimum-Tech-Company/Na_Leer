@@ -178,7 +178,7 @@ export default function PricingPage() {
                   </li>
                   <li className="flex items-center gap-2 text-sm">
                     <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    <span>{plan.max_clients === null ? 'Clients illimités' : `${plan.max_clients} clients`}</span>
+                    <span>{plan.max_clients === -1 || plan.max_clients === null ? 'Clients illimités' : `${plan.max_clients} clients`}</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm">
                     {plan.has_online_payments ? (
