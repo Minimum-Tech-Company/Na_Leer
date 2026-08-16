@@ -29,6 +29,13 @@ export default function SettingsPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
+  const [fedapayConfigured, setFedapayConfigured] = useState(false)
+  const [fedapayEditing, setFedapayEditing] = useState(false)
+  const [fedapaySaving, setFedapaySaving] = useState(false)
+  const [fedapaySuccess, setFedapaySuccess] = useState(false)
+  const [fedapayError, setFedapayError] = useState('')
+  const [fedapayApiInput, setFedapayApiInput] = useState('')
+  const [fedapaySecretInput, setFedapaySecretInput] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
@@ -60,6 +67,12 @@ export default function SettingsPage() {
         setCurrentPlan(subData.plans)
       } else {
         setCurrentPlan({ id: 'free', name: 'Free', price_xof: 0, max_invoices: 3, max_clients: 5, has_online_payments: false, has_auto_reminders: false, has_multi_users: false, has_api_access: false })
+      }
+
+      const fedapayRes = await fetch('/api/user/fedapay-keys')
+      if (fedapayRes.ok) {
+        const fedapayData = await fedapayRes.json()
+        setFedapayConfigured(fedapayData.has_secret_key)
       }
 
       setLoading(false)
@@ -115,9 +128,6 @@ export default function SettingsPage() {
         pays: profile.pays,
         currency: profile.currency,
         logo_url: logoUrl,
-        fedaipay_api_key: profile.fedaipay_api_key,
-        fedaipay_secret_key: profile.fedaipay_secret_key,
-        fedaipay_environment: profile.fedaipay_environment,
       })
       .eq('id', profile.id)
 
@@ -127,6 +137,41 @@ export default function SettingsPage() {
       setTimeout(() => setSuccess(false), 3000)
     }
     setSaving(false)
+  }
+
+  const handleFedapaySave = async () => {
+    setFedapaySaving(true)
+    setFedapayError('')
+    setFedapaySuccess(false)
+
+    try {
+      const res = await fetch('/api/user/fedapay-keys', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fedaipay_api_key: fedapayApiInput || undefined,
+          fedaipay_secret_key: fedapaySecretInput || undefined,
+          fedaipay_environment: profile.fedaipay_environment || 'sandbox',
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        setFedapayError(data.error || 'Erreur lors de la sauvegarde')
+        return
+      }
+
+      setFedapayConfigured(true)
+      setFedapayEditing(false)
+      setFedapayApiInput('')
+      setFedapaySecretInput('')
+      setFedapaySuccess(true)
+      setTimeout(() => setFedapaySuccess(false), 3000)
+    } catch {
+      setFedapayError('Erreur de connexion')
+    } finally {
+      setFedapaySaving(false)
+    }
   }
 
   if (loading) {
@@ -354,7 +399,7 @@ export default function SettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!profile.fedaipay_secret_key && (
+          {!fedapayConfigured && !fedapayEditing && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
               <p className="font-medium mb-3">Guide de configuration en 3 étapes</p>
               <ol className="space-y-3 list-decimal list-inside">
@@ -383,58 +428,105 @@ export default function SettingsPage() {
               <p className="mt-3 text-xs text-blue-600">
                 Une fois configuré, vos clients pourront payer par Wave, Orange Money ou carte bancaire. L&apos;argent arrive directement sur votre compte.
               </p>
+              <Button
+                onClick={() => setFedapayEditing(true)}
+                className="mt-4 bg-blue-600 hover:bg-blue-700"
+                size="sm"
+              >
+                Configurer FedaPay
+              </Button>
             </div>
           )}
 
-          {profile.fedaipay_secret_key && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
-              ✓ FedaPay configuré ({profile.fedaipay_environment || 'sandbox'}) — Vous êtes prêt à recevoir des paiements !
+          {fedapayConfigured && !fedapayEditing && (
+            <div className="space-y-3">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
+                ✓ FedaPay configuré ({profile.fedaipay_environment || 'sandbox'}) — Vous êtes prêt à recevoir des paiements !
+              </div>
+              <Button
+                onClick={() => setFedapayEditing(true)}
+                variant="outline"
+                size="sm"
+              >
+                Modifier les clés FedaPay
+              </Button>
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Environnement
-            </label>
-            <select
-              value={profile.fedaipay_environment || 'sandbox'}
-              onChange={(e) => setProfile({ ...profile, fedaipay_environment: e.target.value })}
-              className="w-full h-10 px-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="sandbox">Sandbox (tests)</option>
-              <option value="live">Production (réel)</option>
-            </select>
-          </div>
+          {fedapayEditing && (
+            <>
+              {fedapaySuccess && (
+                <div className="bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg text-sm">
+                  Clés FedaPay sauvegardées avec succès !
+                </div>
+              )}
+              {fedapayError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-sm">
+                  {fedapayError}
+                </div>
+              )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Clé API (publique)
-            </label>
-            <Input
-              value={profile.fedaipay_api_key || ''}
-              onChange={(e) => setProfile({ ...profile, fedaipay_api_key: e.target.value })}
-              placeholder="pk_live_..."
-              type="password"
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Vous la trouvez dans votre dashboard FedaPay → Paramètres → API
-            </p>
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Environnement
+                </label>
+                <select
+                  value={profile.fedaipay_environment || 'sandbox'}
+                  onChange={(e) => setProfile({ ...profile, fedaipay_environment: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="sandbox">Sandbox (tests)</option>
+                  <option value="live">Production (réel)</option>
+                </select>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Clé secrète (privée)
-            </label>
-            <Input
-              value={profile.fedaipay_secret_key || ''}
-              onChange={(e) => setProfile({ ...profile, fedaipay_secret_key: e.target.value })}
-              placeholder="sk_live_..."
-              type="password"
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Ne partagez jamais cette clé. Elle est utilisée pour créer les paiements.
-            </p>
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Clé API (publique)
+                </label>
+                <Input
+                  value={fedapayApiInput}
+                  onChange={(e) => setFedapayApiInput(e.target.value)}
+                  placeholder={fedapayConfigured ? '•••••••• (laisser vide pour garder)' : 'pk_live_...'}
+                  type="password"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Vous la trouvez dans votre dashboard FedaPay → Paramètres → API
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Clé secrète (privée)
+                </label>
+                <Input
+                  value={fedapaySecretInput}
+                  onChange={(e) => setFedapaySecretInput(e.target.value)}
+                  placeholder={fedapayConfigured ? '•••••••• (laisser vide pour garder)' : 'sk_live_...'}
+                  type="password"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Ne partagez jamais cette clé. Elle est utilisée pour créer les paiements.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleFedapaySave}
+                  disabled={fedapaySaving}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {fedapaySaving ? 'Sauvegarde...' : 'Sauvegarder les clés'}
+                </Button>
+                <Button
+                  onClick={() => { setFedapayEditing(false); setFedapayApiInput(''); setFedapaySecretInput(''); setFedapayError('') }}
+                  variant="outline"
+                >
+                  Annuler
+                </Button>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

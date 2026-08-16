@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createTransaction, getTransactionToken, FedaPayConfig } from '@/lib/fedapay'
 import { sendInvoiceEmail } from '@/lib/email'
+import { decrypt } from '@/lib/encryption'
 
 export async function POST(
   request: NextRequest,
@@ -37,8 +38,18 @@ export async function POST(
         )
       }
 
+      let secretKey: string
+      try {
+        secretKey = decrypt(profile.fedaipay_secret_key)
+      } catch {
+        return NextResponse.json(
+          { error: 'Clé de paiement invalide. Le propriétaire doit reconfigurer ses clés FedaPay.' },
+          { status: 400 }
+        )
+      }
+
       const config: FedaPayConfig = {
-        secretKey: profile.fedaipay_secret_key,
+        secretKey,
         environment: (profile.fedaipay_environment as 'sandbox' | 'live') || 'sandbox',
       }
 
