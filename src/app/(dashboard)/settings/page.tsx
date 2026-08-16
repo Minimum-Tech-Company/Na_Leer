@@ -560,6 +560,26 @@ export default function SettingsPage() {
                 <Button className="w-full">Passer au plan Pro</Button>
               </Link>
             )}
+            {subscription && (
+              <Button
+                variant="outline"
+                className="w-full text-red-600 border-red-200 hover:bg-red-50"
+                onClick={async () => {
+                  if (!confirm('Êtes-vous sûr de vouloir annuler votre abonnement ? Vous retournerez au plan gratuit.')) return
+                  const res = await fetch('/api/subscription/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subscription_id: subscription.id }),
+                  })
+                  if (res.ok) {
+                    setSubscription(null)
+                    setCurrentPlan({ id: 'free', name: 'Free', price_xof: 0, max_invoices: 3, max_clients: 5, has_online_payments: false, has_auto_reminders: false, has_multi_users: false, has_api_access: false })
+                  }
+                }}
+              >
+                Annuler l&apos;abonnement
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
