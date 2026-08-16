@@ -36,7 +36,14 @@ export default function AdminLayout({
   const pathname = usePathname()
   const supabase = createClient()
 
+  const isLoginPage = pathname === '/admin/login'
+
   useEffect(() => {
+    if (isLoginPage) {
+      setLoading(false)
+      return
+    }
+
     const checkAdmin = async () => {
       const res = await fetch('/api/admin/auth/verify')
       if (!res.ok) {
@@ -59,12 +66,16 @@ export default function AdminLayout({
     }
 
     checkAdmin()
-  }, [supabase, router])
+  }, [supabase, router, isLoginPage])
 
   const handleLogout = async () => {
     await fetch('/api/admin/auth/logout', { method: 'POST' })
     await supabase.auth.signOut()
     router.push('/admin/login')
+  }
+
+  if (isLoginPage) {
+    return <>{children}</>
   }
 
   if (loading || !authenticated) {
