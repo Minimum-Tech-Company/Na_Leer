@@ -159,6 +159,30 @@ export default function DashboardLayout({
               </>
             )}
           </nav>
+          <div className="p-4 border-t border-gray-100">
+            <div className="flex items-center gap-3 mb-3 p-2 rounded-xl">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-sm">
+                <span className="text-sm font-bold text-white">
+                  {profile?.full_name?.charAt(0) || '?'}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">
+                  {profile?.full_name || 'Chargement...'}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {profile?.email || ''}
+                </p>
+              </div>
+            </div>
+            <button
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4" />
+              Déconnexion
+            </button>
+          </div>
         </div>
       </div>
 
