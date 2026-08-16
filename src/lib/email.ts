@@ -132,3 +132,73 @@ export async function sendPaymentReminder({
     return { success: false, error }
   }
 }
+
+export async function sendSubscriptionExpiryEmail({
+  to,
+  planName,
+  daysLeft,
+  renewalUrl,
+  companyName,
+}: {
+  to: string
+  planName: string
+  daysLeft: number
+  renewalUrl: string
+  companyName: string
+}) {
+  try {
+    const isExpired = daysLeft <= 0
+    const subject = isExpired
+      ? `Votre abonnement ${planName} a expiré — NA-Leer`
+      : `Votre abonnement ${planName} expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''} — NA-Leer`
+
+    await resend.emails.send({
+      from: `NA-Leer <noreply@${process.env.RESEND_DOMAIN || 'na-leer.org'}`,
+      to,
+      subject,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: ${isExpired ? '#e74c3c' : '#f39c12'}; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0; font-size: 24px;">NA-Leer</h1>
+          </div>
+          <div style="background-color: #f8f9fa; padding: 30px; border: 1px solid #e9ecef;">
+            <h2 style="color: #333;">${isExpired ? 'Abonnement expiré' : 'Abonnement bientôt expiré'}</h2>
+            <p>Bonjour,</p>
+            ${isExpired
+              ? `<p>Votre abonnement <strong>${escapeHtml(planName)}</strong> a expiré. Vous êtes désormais sur le plan gratuit avec des fonctionnalités limitées.</p>`
+              : `<p>Votre abonnement <strong>${escapeHtml(planName)}</strong> expire dans <strong>${daysLeft} jour${daysLeft > 1 ? 's' : ''}</strong>.</p>`
+            }
+            
+            <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e9ecef;">
+              <p style="margin: 0; color: #666;">Pour continuer à profiter de toutes les fonctionnalités, renouvelez votre abonnement :</p>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${renewalUrl}" style="background-color: ${isExpired ? '#e74c3c' : '#2980b9'}; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                ${isExpired ? 'Réactiver mon abonnement' : 'Renouveler maintenant'}
+              </a>
+            </div>
+
+            <p style="color: #666; font-size: 12px;">
+              Si vous ne renouvelez pas, votre compte restera sur le plan gratuit.
+            </p>
+          </div>
+          <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+            <p>Cet email a été envoyé par NA-Leer</p>
+          </div>
+        </body>
+        </html>
+      `,
+    })
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending expiry email:', error)
+    return { success: false, error }
+  }
+}

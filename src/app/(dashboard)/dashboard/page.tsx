@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
   const [planId, setPlanId] = useState<string>('free')
+  const [expiryInfo, setExpiryInfo] = useState<{ daysLeft: number; expires_at: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
@@ -72,6 +73,17 @@ export default function DashboardPage() {
       setClients(clientsRes.data || [])
       setPayments(paymentsRes.data || [])
       setLoading(false)
+
+      // Check subscription expiry (non-blocking)
+      if (activePlanId !== 'free') {
+        try {
+          const res = await fetch('/api/subscription/check-expiry', { method: 'POST' })
+          const data = await res.json()
+          if (data.active && data.daysLeft !== undefined && data.daysLeft <= 7) {
+            setExpiryInfo({ daysLeft: data.daysLeft, expires_at: data.expires_at })
+          }
+        } catch { /* ignore */ }
+      }
     }
 
     fetchData()
@@ -165,6 +177,44 @@ export default function DashboardPage() {
           </Button>
         </Link>
       </div>
+
+      {/* Subscription expiry banner */}
+      {expiryInfo && (
+        <div className={`rounded-lg p-4 flex items-center justify-between ${
+          expiryInfo.daysLeft <= 0
+            ? 'bg-red-50 border border-red-200'
+            : expiryInfo.daysLeft <= 3
+            ? 'bg-orange-50 border border-orange-200'
+            : 'bg-yellow-50 border border-yellow-200'
+        }`}>
+          <div className="flex items-center gap-3">
+            <AlertTriangle className={`h-5 w-5 ${
+              expiryInfo.daysLeft <= 0 ? 'text-red-500' :
+              expiryInfo.daysLeft <= 3 ? 'text-orange-500' : 'text-yellow-500'
+            }`} />
+            <div>
+              <p className={`text-sm font-medium ${
+                expiryInfo.daysLeft <= 0 ? 'text-red-800' :
+                expiryInfo.daysLeft <= 3 ? 'text-orange-800' : 'text-yellow-800'
+              }`}>
+                {expiryInfo.daysLeft <= 0
+                  ? 'Votre abonnement a expiré'
+                  : `Votre abonnement expire dans ${expiryInfo.daysLeft} jour${expiryInfo.daysLeft > 1 ? 's' : ''}`}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {expiryInfo.daysLeft <= 0
+                  ? 'Vous êtes sur le plan gratuit. Renouvelez pour retrouver toutes les fonctionnalités.'
+                  : 'Renouvelez pour garder l\'accès à toutes les fonctionnalités.'}
+              </p>
+            </div>
+          </div>
+          <Link href="/pricing">
+            <Button size="sm" variant={expiryInfo.daysLeft <= 0 ? 'destructive' : 'default'}>
+              Renouveler
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

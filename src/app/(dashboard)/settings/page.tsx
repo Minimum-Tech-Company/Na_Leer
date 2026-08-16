@@ -555,9 +555,33 @@ export default function SettingsPage() {
               <p>• {currentPlan.max_invoices === -1 ? 'Factures illimitées' : `${currentPlan.max_invoices} factures/mois`}</p>
               <p>• {currentPlan.max_clients === -1 ? 'Clients illimités' : `${currentPlan.max_clients} clients`}</p>
             </div>
-            {currentPlan.id === 'free' && (
+            {subscription && subscription.expires_at && (() => {
+              const daysLeft = Math.ceil((new Date(subscription.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+              if (daysLeft <= 0) return (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-700 text-sm font-medium">Abonnement expiré</p>
+                  <p className="text-red-600 text-xs mt-1">Renouvelez pour retrouver toutes les fonctionnalités</p>
+                </div>
+              )
+              if (daysLeft <= 7) return (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                  <p className="text-orange-700 text-sm font-medium">Expire dans {daysLeft} jour{daysLeft > 1 ? 's' : ''}</p>
+                  <p className="text-orange-600 text-xs mt-1">Expire le {new Date(subscription.expires_at).toLocaleDateString('fr-FR')}</p>
+                </div>
+              )
+              return (
+                <p className="text-xs text-gray-400">
+                  Renouvellement le {new Date(subscription.expires_at).toLocaleDateString('fr-FR')}
+                </p>
+              )
+            })()}
+            {currentPlan.id === 'free' ? (
               <Link href="/pricing">
                 <Button className="w-full">Voir les plans payants</Button>
+              </Link>
+            ) : (
+              <Link href="/pricing">
+                <Button className="w-full" variant="outline">Renouveler / Changer de plan</Button>
               </Link>
             )}
             {subscription && (
