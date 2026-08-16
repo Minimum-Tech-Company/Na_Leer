@@ -174,7 +174,7 @@ export default function PricingPage() {
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center gap-2 text-sm">
                     <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    <span>{plan.max_invoices === null ? 'Factures illimitées' : `${plan.max_invoices} factures/mois`}</span>
+                    <span>{plan.max_invoices === -1 || plan.max_invoices === null ? 'Factures illimitées' : `${plan.max_invoices} factures/mois`}</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm">
                     <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
