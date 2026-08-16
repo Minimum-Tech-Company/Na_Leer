@@ -38,31 +38,45 @@ export default function NewClientPage() {
     e.preventDefault()
     setLoading(true)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { alert('Non connecté'); setLoading(false); return }
 
-    const limitCheck = await canCreateClient(user.id)
-    if (!limitCheck.allowed) {
-      alert(limitCheck.reason)
-      setLoading(false)
-      return
-    }
+      try {
+        const limitCheck = await canCreateClient(user.id)
+        if (!limitCheck.allowed) {
+          alert(limitCheck.reason)
+          setLoading(false)
+          return
+        }
+      } catch (e) {
+        console.warn('Plan check failed, allowing anyway:', e)
+      }
 
-    const { error } = await supabase.from('clients').insert({
-      user_id: user.id,
-      name,
-      email: email || null,
-      phone: phone || null,
-      address: address || null,
-      city: city || null,
-      country,
-      tax_id: taxId || null,
-    })
+      const { data, error } = await supabase.from('clients').insert({
+        user_id: user.id,
+        name,
+        email: email || null,
+        phone: phone || null,
+        address: address || null,
+        city: city || null,
+        country,
+        tax_id: taxId || null,
+      }).select()
 
-    if (!error) {
+      if (error) {
+        console.error('Client insert error:', JSON.stringify(error))
+        alert('Erreur: ' + error.message)
+        setLoading(false)
+        return
+      }
+
+      console.log('Client created:', data)
       router.push('/clients')
-    } else {
-      alert('Erreur lors de la création du client')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('Unexpected error:', message)
+      alert('Erreur: ' + message)
       setLoading(false)
     }
   }

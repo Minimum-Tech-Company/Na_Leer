@@ -93,27 +93,40 @@ export default function RegisterPage() {
         options: { data: { full_name: fullName, company_name: companyName, company_phone: companyPhone } },
       })
 
-      if (authError) { setError(authError.message); setLoading(false); return }
+      if (authError) {
+        setError(authError.message || 'Erreur lors de l\'inscription')
+        setLoading(false)
+        return
+      }
 
       if (data.user) {
-        const logoUrl = await uploadLogo(data.user.id)
-        await supabase.from('profiles').update({
-          company_name: companyName,
-          forme_juridique: formeJuridique,
-          tax_id: ninea.replace(/\s/g, ''),
-          rccm: rccm || null,
-          company_address: companyAddress,
-          ville, pays,
-          company_phone: companyPhone,
-          company_email: companyEmail || email,
-          logo_url: logoUrl,
-        }).eq('id', data.user.id)
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: data.user.id,
+            full_name: fullName,
+            company_name: companyName,
+            forme_juridique: formeJuridique,
+            tax_id: ninea.replace(/\s/g, ''),
+            rccm: rccm || null,
+            company_address: companyAddress,
+            ville, pays,
+            company_phone: companyPhone,
+            company_email: companyEmail || email,
+          }),
+        })
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}))
+          console.error('Profile save error:', errData)
+        }
       }
 
       setShowSuccess(true)
-      setTimeout(() => { window.location.href = '/dashboard' }, 2000)
-    } catch (err: any) {
-      setError('Erreur: ' + err.message)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Une erreur est survenue'
+      setError(message)
       setLoading(false)
     }
   }
@@ -121,12 +134,20 @@ export default function RegisterPage() {
   if (showSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check className="h-10 w-10 text-green-600" />
+        <div className="text-center max-w-md px-6">
+          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Mail className="h-10 w-10 text-blue-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Bienvenue sur NA-Leer !</h2>
-          <p className="text-gray-500">Redirection vers votre tableau de bord...</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Vérifiez votre email</h2>
+          <p className="text-gray-500 mb-2">
+            Un email de confirmation a été envoyé à <strong>{email}</strong>
+          </p>
+          <p className="text-gray-400 text-sm mb-8">
+            Cliquez sur le lien dans l&apos;email pour activer votre compte, puis connectez-vous.
+          </p>
+          <Link href="/login" className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
+            Aller à la connexion
+          </Link>
         </div>
       </div>
     )

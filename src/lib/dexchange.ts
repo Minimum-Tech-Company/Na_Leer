@@ -16,27 +16,39 @@ export interface CreateCheckoutParams {
   successUrl: string
   failureUrl: string
   webhookUrl: string
+  paymentMethod?: string
+  phone?: string
   metadata?: Record<string, any>
 }
 
 export async function createCheckoutSession(params: CreateCheckoutParams) {
   const apiKey = getApiKey()
+
+  const body: Record<string, any> = {
+    reference: params.reference,
+    item_name: params.itemName,
+    amount: params.amount,
+    currency: params.currency,
+    success_url: params.successUrl,
+    failure_url: params.failureUrl,
+    webhook_url: params.webhookUrl,
+    metadata: params.metadata || {},
+  }
+
+  if (params.paymentMethod) {
+    body.payment_method = params.paymentMethod
+  }
+  if (params.phone) {
+    body.phone = params.phone
+  }
+
   const response = await fetch(`${DEXCHANGE_API_URL}/checkout-sessions`, {
     method: 'POST',
     headers: {
       'x-api-key': apiKey,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      reference: params.reference,
-      item_name: params.itemName,
-      amount: params.amount,
-      currency: params.currency,
-      success_url: params.successUrl,
-      failure_url: params.failureUrl,
-      webhook_url: params.webhookUrl,
-      metadata: params.metadata || {},
-    }),
+    body: JSON.stringify(body),
   })
 
   const data = await response.json()

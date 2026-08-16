@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle, X, CreditCard, Zap, Crown, Phone, Smartphone } from 'lucide-react'
+import { CheckCircle, X, CreditCard, Zap, Crown, Phone } from 'lucide-react'
+import { WaveLogo, OrangeMoneyLogo, FreeMoneyLogo, VisaLogo, MastercardLogo } from '@/components/payment-logos'
 import { Plan, Subscription } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
@@ -22,9 +23,10 @@ const planColors: Record<string, string> = {
 }
 
 const PROVIDERS = [
-  { id: 'orange', name: 'Orange Money', color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200', icon: '📱' },
-  { id: 'wave', name: 'Wave', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200', icon: '〰️' },
-  { id: 'free', name: 'Free Money', color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200', icon: '📲' },
+  { id: 'wave', name: 'Wave', logo: <WaveLogo className="h-7" /> },
+  { id: 'orange', name: 'Orange Money', logo: <OrangeMoneyLogo className="h-7" /> },
+  { id: 'free', name: 'Free Money', logo: <FreeMoneyLogo className="h-7" /> },
+  { id: 'card', name: 'Carte bancaire', logo: <div className="flex gap-1"><VisaLogo className="h-6" /><MastercardLogo className="h-6" /></div> },
 ]
 
 export default function PricingPage() {
@@ -32,10 +34,9 @@ export default function PricingPage() {
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null)
   const [currentPlanId, setCurrentPlanId] = useState<string>('free')
   const [loading, setLoading] = useState(true)
-  const [purchasing, setPurchasing] = useState<string | null>(null)
   const [showPaymentModal, setShowPaymentModal] = useState<string | null>(null)
   const [phone, setPhone] = useState('')
-  const [provider, setProvider] = useState('orange')
+  const [provider, setProvider] = useState('wave')
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'sending' | 'waiting' | 'success' | 'error'>('idle')
   const [paymentMessage, setPaymentMessage] = useState('')
   const supabase = createClient()
@@ -75,18 +76,21 @@ export default function PricingPage() {
     if (!plan || plan.price_xof === 0) return
     setShowPaymentModal(planId)
     setPhone('')
-    setProvider('orange')
+    setProvider('wave')
     setPaymentStatus('idle')
     setPaymentMessage('')
   }
 
   const handleDirectPay = async () => {
     if (!showPaymentModal) return
-    const cleanPhone = phone.replace(/\s/g, '').replace(/^221/, '')
-    if (!/^[0-9]{9}$/.test(cleanPhone)) {
-      setPaymentStatus('error')
-      setPaymentMessage('Numéro invalide. Entrez 9 chiffres (ex: 771234567)')
-      return
+
+    if (provider !== 'card') {
+      const cleanPhone = phone.replace(/\s/g, '').replace(/^221/, '')
+      if (!/^[0-9]{9}$/.test(cleanPhone)) {
+        setPaymentStatus('error')
+        setPaymentMessage('Numéro invalide. Entrez 9 chiffres (ex: 771234567)')
+        return
+      }
     }
 
     setPaymentStatus('sending')
@@ -98,7 +102,7 @@ export default function PricingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           plan_id: showPaymentModal,
-          phone: cleanPhone,
+          phone: provider !== 'card' ? phone.replace(/\s/g, '').replace(/^221/, '') : undefined,
           provider,
         }),
       })
@@ -111,16 +115,13 @@ export default function PricingPage() {
         return
       }
 
-      setPaymentStatus('waiting')
-      setPaymentMessage('Notification envoyée sur votre téléphone. Validez le paiement via USSD.')
-
-      setTimeout(() => {
-        setShowPaymentModal(null)
-        setPaymentStatus('idle')
-      }, 5000)
-    } catch (err: any) {
+      if (data.payment_url) {
+        window.location.href = data.payment_url
+        return
+      }
+    } catch (err: unknown) {
       setPaymentStatus('error')
-      setPaymentMessage(err.message || 'Erreur de connexion')
+      setPaymentMessage(err instanceof Error ? err.message : 'Erreur de connexion')
     }
   }
 
@@ -234,9 +235,8 @@ export default function PricingPage() {
                     <Button
                       className="w-full"
                       onClick={() => handlePurchaseClick(plan.id)}
-                      disabled={purchasing === plan.id}
                     >
-                      {purchasing === plan.id ? 'Redirection...' : `Passer au ${plan.name}`}
+                      Payer {plan.name}
                     </Button>
                   )}
                 </div>
@@ -247,14 +247,18 @@ export default function PricingPage() {
       </div>
 
       <div className="bg-gray-50 rounded-lg p-6 mt-8">
-        <h3 className="font-semibold text-gray-900 mb-2">Moyens de paiement acceptés</h3>
-        <div className="flex gap-4 flex-wrap">
-          {PROVIDERS.map(p => (
+        <h3 className="font-semibold text-gray-900 mb-4 text-center">Moyens de paiement acceptés</h3>
+        <div className="flex justify-center items-center gap-6 flex-wrap">
+          {PROVIDERS.filter(p => p.id !== 'card').map(p => (
             <div key={p.id} className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border">
-              <Smartphone className={`h-5 w-5 ${p.color}`} />
-              <span className="text-sm">{p.name}</span>
+              {p.logo}
+              <span className="text-sm font-medium text-gray-700">{p.name}</span>
             </div>
           ))}
+          <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border">
+            <div className="flex gap-1"><VisaLogo className="h-6" /><MastercardLogo className="h-6" /></div>
+            <span className="text-sm font-medium text-gray-700">Carte bancaire</span>
+          </div>
         </div>
       </div>
 
@@ -280,42 +284,52 @@ export default function PricingPage() {
               <span className="text-gray-500">/mois</span>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Numéro de téléphone
-              </label>
-              <div className="flex items-center gap-2 border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
-                <Phone className="h-4 w-4 text-gray-400" />
-                <span className="text-sm text-gray-500">+221</span>
-                <input
-                  type="tel"
-                  placeholder="77 123 45 67"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="flex-1 outline-none text-sm"
-                  maxLength={12}
-                />
+            {provider !== 'card' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Numéro de téléphone
+                </label>
+                <div className="flex items-center gap-2 border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+                  <Phone className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm text-gray-500">+221</span>
+                  <input
+                    type="tel"
+                    placeholder="77 123 45 67"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="flex-1 outline-none text-sm"
+                    maxLength={12}
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">9 chiffres sans l&apos;indicatif pays</p>
               </div>
-              <p className="text-xs text-gray-400 mt-1">9 chiffres sans l'indicatif pays</p>
-            </div>
+            )}
+
+            {provider === 'card' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-blue-800 text-sm">
+                  Vous serez redirigé vers la page de paiement sécurisé pour saisir vos informations bancaires.
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Moyen de paiement
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {PROVIDERS.map(p => (
                   <button
                     key={p.id}
                     onClick={() => setProvider(p.id)}
                     className={`p-3 rounded-lg border-2 text-center transition-all ${
                       provider === p.id
-                        ? `${p.bg} border-current ring-2 ring-current/20`
+                        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <div className="text-lg mb-1">{p.icon}</div>
-                    <div className={`text-xs font-medium ${provider === p.id ? p.color : 'text-gray-600'}`}>
+                    <div className="flex justify-center mb-2">{p.logo}</div>
+                    <div className={`text-xs font-medium ${provider === p.id ? 'text-blue-700' : 'text-gray-600'}`}>
                       {p.name}
                     </div>
                   </button>
@@ -330,23 +344,25 @@ export default function PricingPage() {
                 paymentStatus === 'success' ? 'bg-green-50 text-green-700' :
                 'bg-gray-50 text-gray-700'
               }`}>
-                {paymentStatus === 'waiting' && <Smartphone className="h-4 w-4 inline mr-1 animate-pulse" />}
                 {paymentMessage}
               </div>
             )}
 
             <Button
               onClick={handleDirectPay}
-              disabled={!phone || paymentStatus === 'sending' || paymentStatus === 'waiting'}
+              disabled={paymentStatus === 'sending' || paymentStatus === 'waiting' || (provider !== 'card' && !phone)}
               className="w-full"
             >
               {paymentStatus === 'sending' ? 'Envoi en cours...' :
                paymentStatus === 'waiting' ? 'En attente de confirmation...' :
+               provider === 'card' ? 'Payer par carte' :
                'Payer maintenant'}
             </Button>
 
             <p className="text-xs text-center text-gray-400">
-              Vous recevrez une notification USSD sur votre téléphone. Confirmez le paiement directement.
+              {provider === 'card'
+                ? 'Paiement sécurisé par carte bancaire (Visa / Mastercard).'
+                : 'Vous recevrez une notification USSD sur votre téléphone. Confirmez le paiement directement.'}
             </p>
           </div>
         </div>
