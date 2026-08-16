@@ -26,6 +26,19 @@ function fmtDate(dateStr: string): string {
 
 async function fetchImageAsBase64(url: string): Promise<string | null> {
   try {
+    // Try proxy route first (avoids CORS issues with Supabase storage)
+    const proxyBase = typeof window !== 'undefined' ? window.location.origin : ''
+    if (url.includes('supabase.co/storage') && proxyBase) {
+      const pathMatch = url.match(/\/logos\/(.+?)$/)
+      if (pathMatch) {
+        const res = await fetch(`${proxyBase}/api/logo?path=${encodeURIComponent(pathMatch[1])}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.dataUrl) return data.dataUrl
+        }
+      }
+    }
+    // Fallback: direct fetch
     const res = await fetch(url, { mode: 'cors' })
     if (!res.ok) return null
     const blob = await res.blob()

@@ -150,6 +150,12 @@ export default function LoginPage() {
                 </span>
               )}
             </Button>
+
+            <div className="text-center mt-3">
+              <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
+                Mot de passe oublié ?
+              </Link>
+            </div>
           </form>
 
           <div className="mt-8 text-center">
