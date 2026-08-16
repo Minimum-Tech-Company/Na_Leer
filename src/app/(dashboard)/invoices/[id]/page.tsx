@@ -12,25 +12,19 @@ import { downloadPDF } from '@/lib/pdf'
 import { Invoice, InvoiceItem, Profile, InvoiceTemplate, Payment } from '@/types'
 import { ArrowLeft, Download, Send, CreditCard, Trash2, Link2, Copy, Check, CheckCircle, CircleDollarSign, Building2, Smartphone } from 'lucide-react'
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'destructive' | 'secondary' }> = {
-  draft: { label: 'Brouillon', variant: 'secondary' },
-  sent: { label: 'Envoyée', variant: 'default' },
-  paid: { label: 'Payée', variant: 'success' },
-  overdue: { label: 'En retard', variant: 'destructive' },
-  cancelled: { label: 'Annulée', variant: 'secondary' },
+const statusConfig: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'destructive' | 'secondary'; color: string }> = {
+  draft: { label: 'Brouillon', variant: 'secondary', color: 'bg-gray-100 text-gray-700' },
+  sent: { label: 'Envoyée', variant: 'default', color: 'bg-blue-100 text-blue-700' },
+  paid: { label: 'Payée', variant: 'success', color: 'bg-green-100 text-green-700' },
+  overdue: { label: 'En retard', variant: 'destructive', color: 'bg-red-100 text-red-700' },
+  cancelled: { label: 'Annulée', variant: 'secondary', color: 'bg-gray-100 text-gray-500' },
 }
 
 const paymentMethodLabels: Record<string, string> = {
-  wave: 'Wave',
-  orange_money: 'Orange Money',
-  free_money: 'Free Money',
-  mtn_mobile_money: 'MTN Mobile Money',
-  moov_money: 'Moov Money',
-  visa: 'Visa',
-  mastercard: 'Mastercard',
-  fedapay: 'FedaPay',
-  card: 'Carte bancaire',
-  mobile_money: 'Mobile Money',
+  wave: 'Wave', orange_money: 'Orange Money', free_money: 'Free Money',
+  mtn_mobile_money: 'MTN Mobile Money', moov_money: 'Moov Money',
+  visa: 'Visa', mastercard: 'Mastercard', fedapay: 'FedaPay',
+  card: 'Carte bancaire', mobile_money: 'Mobile Money',
 }
 
 function getPaymentMethodLabel(method: string): string {
@@ -43,7 +37,6 @@ export default function InvoiceDetailPage() {
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [items, setItems] = useState<InvoiceItem[]>([])
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [template, setTemplate] = useState<InvoiceTemplate | null>(null)
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(false)
@@ -57,87 +50,42 @@ export default function InvoiceDetailPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Fetch invoice
       const { data: invoiceData } = await supabase
-        .from('invoices')
-        .select('*, client:clients(*)')
-        .eq('id', params.id)
-        .eq('user_id', user.id)
-        .single()
+        .from('invoices').select('*, client:clients(*)')
+        .eq('id', params.id).eq('user_id', user.id).single()
 
-      if (!invoiceData) {
-        router.push('/invoices')
-        return
-      }
+      if (!invoiceData) { router.push('/invoices'); return }
 
-      // Fetch items
-      const { data: itemsData } = await supabase
-        .from('invoice_items')
-        .select('*')
-        .eq('invoice_id', invoiceData.id)
-
-      // Fetch profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      // Fetch default template
-      const { data: templateData } = await supabase
-        .from('invoice_templates')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_default', true)
-        .single()
-
-      // Fetch payments for this invoice
-      const { data: paymentsData } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('invoice_id', invoiceData.id)
-        .order('created_at', { ascending: false })
+      const { data: itemsData } = await supabase.from('invoice_items').select('*').eq('invoice_id', invoiceData.id)
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      const { data: paymentsData } = await supabase.from('payments').select('*').eq('invoice_id', invoiceData.id).order('created_at', { ascending: false })
 
       setInvoice(invoiceData)
       setItems(itemsData || [])
       setProfile(profileData)
-      setTemplate(templateData)
       setPayments(paymentsData || [])
       setLoading(false)
     }
-
     fetchData()
   }, [supabase, params.id, router])
 
   const handleDownloadPDF = async () => {
-    if (invoice && profile) {
-      await downloadPDF(invoice, profile, items, undefined, paymentUrl || undefined)
-    }
+    if (invoice && profile) await downloadPDF(invoice, profile, items, undefined, paymentUrl || undefined)
   }
 
   const handlePay = async () => {
     if (!invoice) return
     setPaying(true)
-
     try {
       const response = await fetch('/api/invoices/' + invoice.id + '/pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'create_payment' }),
       })
-
       const data = await response.json()
-
-      if (data.payment_url) {
-        setPaymentUrl(data.payment_url)
-      } else {
-        alert('Erreur: ' + (data.error || 'Erreur lors de la création du paiement'))
-      }
-    } catch (error) {
-      alert('Erreur lors de la connexion au service de paiement')
-    } finally {
-      setPaying(false)
-    }
+      if (data.payment_url) setPaymentUrl(data.payment_url)
+      else alert('Erreur: ' + (data.error || 'Erreur lors de la création du paiement'))
+    } catch { alert('Erreur lors de la connexion au service de paiement') }
+    finally { setPaying(false) }
   }
 
   const handleCopyLink = async () => {
@@ -150,35 +98,20 @@ export default function InvoiceDetailPage() {
   const handleSendEmail = async () => {
     if (!invoice || !invoice.client?.email) return
     setSendingEmail(true)
-
     try {
       const response = await fetch('/api/invoices/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          invoice_id: invoice.id,
-          payment_url: paymentUrl || undefined,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoice_id: invoice.id, payment_url: paymentUrl || undefined }),
       })
-
       const data = await response.json()
-      if (data.success) {
-        alert('Email envoyé avec succès à ' + invoice.client.email)
-        setInvoice({ ...invoice, status: 'sent' })
-      } else {
-        alert('Erreur: ' + (data.error || "Erreur lors de l'envoi de l'email"))
-      }
-    } catch {
-      alert("Erreur lors de l'envoi de l'email")
-    } finally {
-      setSendingEmail(false)
-    }
+      if (data.success) { alert('Email envoyé avec succès à ' + invoice.client.email); setInvoice({ ...invoice, status: 'sent' }) }
+      else alert('Erreur: ' + (data.error || "Erreur lors de l'envoi de l'email"))
+    } catch { alert("Erreur lors de l'envoi de l'email") }
+    finally { setSendingEmail(false) }
   }
 
   const handleDelete = async () => {
-    if (!invoice) return
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')) return
-
+    if (!invoice || !confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')) return
     await supabase.from('invoice_items').delete().eq('invoice_id', invoice.id)
     await supabase.from('invoices').delete().eq('id', invoice.id)
     router.push('/invoices')
@@ -186,54 +119,31 @@ export default function InvoiceDetailPage() {
 
   const handlePaymentValidation = async (status: 'paid' | 'unpaid') => {
     if (!invoice) return
-
     const newStatus = status === 'paid' ? 'paid' : invoice.status === 'paid' ? 'sent' : invoice.status
     const paidAt = status === 'paid' ? new Date().toISOString() : null
-
-    await supabase
-      .from('invoices')
-      .update({
-        payment_status: status,
-        status: newStatus,
-        paid_at: paidAt,
-      })
-      .eq('id', invoice.id)
-
+    await supabase.from('invoices').update({ payment_status: status, status: newStatus, paid_at: paidAt }).eq('id', invoice.id)
     if (status === 'paid') {
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        await supabase.from('payments').insert({
-          invoice_id: invoice.id,
-          user_id: user.id,
-          amount: invoice.total,
-          currency: invoice.currency || 'XOF',
-          method: invoice.payment_method || 'offline',
-          status: 'completed',
-        })
-      }
+      if (user) await supabase.from('payments').insert({ invoice_id: invoice.id, user_id: user.id, amount: invoice.total, currency: invoice.currency || 'XOF', method: invoice.payment_method || 'offline', status: 'completed' })
     }
-
-    setInvoice({
-      ...invoice,
-      payment_status: status,
-      status: newStatus,
-      paid_at: paidAt,
-    })
+    setInvoice({ ...invoice, payment_status: status, status: newStatus, paid_at: paidAt })
   }
 
   const handlePaymentSource = async (source: 'app' | 'offline') => {
     if (!invoice) return
-    await supabase
-      .from('invoices')
-      .update({ payment_source: source })
-      .eq('id', invoice.id)
+    await supabase.from('invoices').update({ payment_source: source }).eq('id', invoice.id)
     setInvoice({ ...invoice, payment_source: source })
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Chargement...</div>
+      <div className="space-y-6">
+        <div className="h-10 w-64 bg-gray-200 rounded-lg animate-pulse" />
+        <div className="grid grid-cols-2 gap-6">
+          <div className="h-48 bg-white rounded-2xl animate-pulse" />
+          <div className="h-48 bg-white rounded-2xl animate-pulse" />
+        </div>
+        <div className="h-64 bg-white rounded-2xl animate-pulse" />
       </div>
     )
   }
@@ -241,95 +151,77 @@ export default function InvoiceDetailPage() {
   if (!invoice) return null
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link href="/invoices">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="rounded-xl">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900">{invoice.invoice_number}</h1>
-              <Badge variant={statusConfig[invoice.status]?.variant || 'default'}>
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusConfig[invoice.status]?.color}`}>
                 {statusConfig[invoice.status]?.label}
-              </Badge>
+              </span>
               {invoice.status === 'paid' && invoice.payment_method && (
-                <Badge variant="success" className="bg-green-100 text-green-800">
-                  {getPaymentMethodLabel(invoice.payment_method)}
-                </Badge>
+                <Badge className="bg-green-100 text-green-700 border-0">{getPaymentMethodLabel(invoice.payment_method)}</Badge>
               )}
             </div>
-            <p className="text-gray-600">
-              {invoice.client?.name}
-            </p>
+            <p className="text-gray-500 mt-1">{invoice.client?.name}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleDownloadPDF}>
-            <Download className="h-4 w-4 mr-2" />
-            PDF
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" onClick={handleDownloadPDF} className="rounded-xl border-gray-200">
+            <Download className="h-4 w-4 mr-2" /> PDF
           </Button>
           {invoice.status === 'draft' && (
-            <Button
-              onClick={handleSendEmail}
-              disabled={sendingEmail || !invoice.client?.email}
-              title={!invoice.client?.email ? 'Ajoutez un email au client pour envoyer' : ''}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {sendingEmail ? 'Envoi...' : 'Envoyer par email'}
+            <Button onClick={handleSendEmail} disabled={sendingEmail || !invoice.client?.email}
+              className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-200/50 btn-press">
+              <Send className="h-4 w-4 mr-2" /> {sendingEmail ? 'Envoi...' : 'Envoyer par email'}
             </Button>
           )}
           {(invoice.status === 'sent' || invoice.status === 'overdue') && (
-            <Button onClick={handlePay} disabled={paying}>
-              <CreditCard className="h-4 w-4 mr-2" />
-              {paying ? 'Redirection...' : 'Payer en ligne'}
+            <Button onClick={handlePay} disabled={paying}
+              className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-200/50 btn-press">
+              <CreditCard className="h-4 w-4 mr-2" /> {paying ? 'Redirection...' : 'Payer en ligne'}
             </Button>
           )}
-          <Button variant="destructive" onClick={handleDelete}>
+          <Button variant="ghost" onClick={handleDelete} className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl">
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      {/* Invoice details */}
+      {/* Info cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Informations</CardTitle>
+        <Card className="border-0 shadow-sm card-hover">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Informations</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Numéro</span>
-              <span className="font-medium">{invoice.invoice_number}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Date d&apos;émission</span>
-              <span>{formatDate(invoice.issue_date)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Échéance</span>
-              <span>{formatDate(invoice.due_date)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Statut</span>
-              <Badge variant={statusConfig[invoice.status]?.variant || 'default'}>
-                {statusConfig[invoice.status]?.label}
-              </Badge>
-            </div>
+            {[
+              { label: 'Numéro', value: invoice.invoice_number },
+              { label: "Date d'émission", value: formatDate(invoice.issue_date) },
+              { label: 'Échéance', value: formatDate(invoice.due_date) },
+            ].map(item => (
+              <div key={item.label} className="flex justify-between text-sm">
+                <span className="text-gray-500">{item.label}</span>
+                <span className="font-medium text-gray-900">{item.value}</span>
+              </div>
+            ))}
             {invoice.status === 'paid' && invoice.paid_at && (
               <>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Payée le</span>
-                  <span className="text-green-600 font-medium">{formatDate(invoice.paid_at)}</span>
+                  <span className="text-gray-500">Payée le</span>
+                  <span className="font-medium text-green-600">{formatDate(invoice.paid_at)}</span>
                 </div>
                 {invoice.payment_method && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Moyen de paiement</span>
-                    <span className="font-medium text-green-600">
-                      {getPaymentMethodLabel(invoice.payment_method)}
-                    </span>
+                    <span className="text-gray-500">Moyen de paiement</span>
+                    <span className="font-medium text-green-600">{getPaymentMethodLabel(invoice.payment_method)}</span>
                   </div>
                 )}
               </>
@@ -337,64 +229,71 @@ export default function InvoiceDetailPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Client</CardTitle>
+        <Card className="border-0 shadow-sm card-hover">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Client</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="font-medium">{invoice.client?.name}</p>
-            {invoice.client?.email && (
-              <p className="text-sm text-gray-600">{invoice.client.email}</p>
-            )}
-            {invoice.client?.address && (
-              <p className="text-sm text-gray-600">{invoice.client.address}</p>
-            )}
-            {invoice.client?.city && (
-              <p className="text-sm text-gray-600">{invoice.client.city}</p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                <span className="text-sm font-bold text-white">{invoice.client?.name?.charAt(0) || '?'}</span>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">{invoice.client?.name}</p>
+                {invoice.client?.email && <p className="text-sm text-gray-500">{invoice.client.email}</p>}
+              </div>
+            </div>
+            {(invoice.client?.address || invoice.client?.city) && (
+              <div className="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-500">
+                {invoice.client.address && <p>{invoice.client.address}</p>}
+                {invoice.client.city && <p>{invoice.client.city}</p>}
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
 
       {/* Items */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Articles / Services</CardTitle>
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Articles / Services</CardTitle>
         </CardHeader>
         <CardContent>
-          <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-3 text-sm font-medium text-gray-600">Description</th>
-                <th className="text-right py-3 text-sm font-medium text-gray-600">Qté</th>
-                <th className="text-right py-3 text-sm font-medium text-gray-600">Prix</th>
-                <th className="text-right py-3 text-sm font-medium text-gray-600">Montant</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="border-b last:border-0">
-                  <td className="py-3 text-sm">{item.description}</td>
-                  <td className="py-3 text-sm text-right">{item.quantity}</td>
-                  <td className="py-3 text-sm text-right">{formatCurrency(item.unit_price)}</td>
-                  <td className="py-3 text-sm text-right font-medium">{formatCurrency(item.amount)}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+                  <th className="text-right py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Qté</th>
+                  <th className="text-right py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Prix</th>
+                  <th className="text-right py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Montant</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {items.map((item, i) => (
+                  <tr key={item.id} className={`border-b border-gray-50 ${i % 2 === 0 ? 'bg-gray-50/50' : ''}`}>
+                    <td className="py-3 text-sm font-medium text-gray-900">{item.description}</td>
+                    <td className="py-3 text-sm text-right text-gray-600">{item.quantity}</td>
+                    <td className="py-3 text-sm text-right text-gray-600">{formatCurrency(item.unit_price)}</td>
+                    <td className="py-3 text-sm text-right font-semibold text-gray-900">{formatCurrency(item.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-          <div className="mt-6 space-y-2 max-w-xs ml-auto">
+          <div className="mt-6 max-w-xs ml-auto space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Sous-total</span>
-              <span>{formatCurrency(invoice.subtotal)}</span>
+              <span className="text-gray-500">Sous-total</span>
+              <span className="font-medium">{formatCurrency(invoice.subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">TVA ({invoice.tax_rate}%)</span>
-              <span>{formatCurrency(invoice.tax_amount)}</span>
+              <span className="text-gray-500">TVA ({invoice.tax_rate}%)</span>
+              <span className="font-medium">{formatCurrency(invoice.tax_amount)}</span>
             </div>
-            <div className="flex justify-between font-bold text-lg border-t pt-2">
-              <span>Total</span>
-              <span>{formatCurrency(invoice.total, invoice.currency)}</span>
+            <div className="flex justify-between font-bold text-lg border-t border-gray-200 pt-3">
+              <span className="text-gray-900">Total</span>
+              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{formatCurrency(invoice.total, invoice.currency)}</span>
             </div>
           </div>
         </CardContent>
@@ -402,9 +301,9 @@ export default function InvoiceDetailPage() {
 
       {/* Notes */}
       {invoice.notes && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Notes</CardTitle>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Notes</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600 whitespace-pre-wrap">{invoice.notes}</p>
@@ -414,138 +313,71 @@ export default function InvoiceDetailPage() {
 
       {/* Payment Link */}
       {paymentUrl && (
-        <Card>
-          <CardHeader>
+        <Card className="border-0 shadow-sm border-l-4 border-l-blue-500">
+          <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Link2 className="h-5 w-5" />
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center"><Link2 className="h-4 w-4 text-blue-600" /></div>
               Lien de paiement
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Partagez ce lien avec votre client pour qu&apos;il puisse payer la facture.
-            </p>
+            <p className="text-sm text-gray-500">Partagez ce lien avec votre client pour qu'il puisse payer la facture.</p>
             <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={paymentUrl}
-                readOnly
-                className="flex-1 h-10 px-3 rounded-lg border border-gray-300 text-sm bg-gray-50 font-mono"
-              />
-              <Button variant="outline" onClick={handleCopyLink}>
-                {copied ? (
-                  <><Check className="h-4 w-4 mr-2" /> Copié</>
-                ) : (
-                  <><Copy className="h-4 w-4 mr-2" /> Copier</>
-                )}
+              <input type="text" value={paymentUrl} readOnly className="flex-1 h-10 px-4 rounded-xl border border-gray-200 text-sm bg-gray-50 font-mono" />
+              <Button variant="outline" onClick={handleCopyLink} className="rounded-xl border-gray-200">
+                {copied ? <><Check className="h-4 w-4 mr-2" /> Copié</> : <><Copy className="h-4 w-4 mr-2" /> Copier</>}
               </Button>
             </div>
             {invoice.client?.email && (
-              <Button
-                onClick={handleSendEmail}
-                disabled={sendingEmail}
-                className="w-full"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                {sendingEmail ? 'Envoi en cours...' : `Envoyer par email à ${invoice.client.email}`}
+              <Button onClick={handleSendEmail} disabled={sendingEmail} className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-200/50 btn-press">
+                <Send className="h-4 w-4 mr-2" /> {sendingEmail ? 'Envoi en cours...' : `Envoyer par email à ${invoice.client.email}`}
               </Button>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* Send email section */}
-      {(invoice.status === 'sent' || invoice.status === 'overdue') && invoice.client?.email && !paymentUrl && (
-        <Card>
-          <CardContent className="pt-6">
-            <Button
-              onClick={handleSendEmail}
-              disabled={sendingEmail}
-              className="w-full"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {sendingEmail ? 'Envoi en cours...' : `Renvoyer la facture par email à ${invoice.client.email}`}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Payment Validation - For Merchant */}
+      {/* Payment Validation */}
       {invoice.status !== 'draft' && (
-        <Card>
-          <CardHeader>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <CheckCircle className="h-5 w-5" />
+              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"><CheckCircle className="h-4 w-4 text-green-600" /></div>
               Validation du paiement
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Confirmez si le paiement a été reçu et indiquez la source pour votre comptabilité.
-            </p>
-
-            {/* Payment Status */}
+            <p className="text-sm text-gray-500">Confirmez si le paiement a été reçu et indiquez la source pour votre comptabilité.</p>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Statut du paiement</label>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Statut du paiement</label>
               <div className="flex gap-3">
-                <Button
-                  variant={invoice.payment_status === 'paid' ? 'default' : 'outline'}
-                  onClick={() => handlePaymentValidation('paid')}
-                  className={invoice.payment_status === 'paid' ? 'bg-green-600 hover:bg-green-700' : ''}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Payé
+                <Button variant={invoice.payment_status === 'paid' ? 'default' : 'outline'} onClick={() => handlePaymentValidation('paid')}
+                  className={`rounded-xl ${invoice.payment_status === 'paid' ? 'bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200/50' : 'border-gray-200'}`}>
+                  <CheckCircle className="h-4 w-4 mr-2" /> Payé
                 </Button>
-                <Button
-                  variant={invoice.payment_status === 'unpaid' ? 'default' : 'outline'}
-                  onClick={() => handlePaymentValidation('unpaid')}
-                  className={invoice.payment_status === 'unpaid' ? 'bg-red-600 hover:bg-red-700' : ''}
-                >
+                <Button variant={invoice.payment_status === 'unpaid' ? 'default' : 'outline'} onClick={() => handlePaymentValidation('unpaid')}
+                  className={`rounded-xl ${invoice.payment_status === 'unpaid' ? 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-200/50' : 'border-gray-200'}`}>
                   Non payé
                 </Button>
               </div>
             </div>
-
-            {/* Payment Source */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Source du paiement</label>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Source du paiement</label>
               <div className="flex gap-3">
-                <Button
-                  variant={invoice.payment_source === 'app' ? 'default' : 'outline'}
-                  onClick={() => handlePaymentSource('app')}
-                  className={invoice.payment_source === 'app' ? 'bg-blue-600 hover:bg-blue-700' : ''}
-                >
-                  <Smartphone className="h-4 w-4 mr-2" />
-                  Via l&apos;application
+                <Button variant={invoice.payment_source === 'app' ? 'default' : 'outline'} onClick={() => handlePaymentSource('app')}
+                  className={`rounded-xl ${invoice.payment_source === 'app' ? 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200/50' : 'border-gray-200'}`}>
+                  <Smartphone className="h-4 w-4 mr-2" /> Via l'application
                 </Button>
-                <Button
-                  variant={invoice.payment_source === 'offline' ? 'default' : 'outline'}
-                  onClick={() => handlePaymentSource('offline')}
-                  className={invoice.payment_source === 'offline' ? 'bg-orange-600 hover:bg-orange-700' : ''}
-                >
-                  <Building2 className="h-4 w-4 mr-2" />
-                  En dehors (espèces, virement, etc.)
+                <Button variant={invoice.payment_source === 'offline' ? 'default' : 'outline'} onClick={() => handlePaymentSource('offline')}
+                  className={`rounded-xl ${invoice.payment_source === 'offline' ? 'bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-200/50' : 'border-gray-200'}`}>
+                  <Building2 className="h-4 w-4 mr-2" /> En dehors
                 </Button>
               </div>
             </div>
-
-            {/* Status indicators */}
-            <div className="flex gap-4 pt-2">
-              {invoice.payment_status === 'paid' && (
-                <Badge className="bg-green-100 text-green-800">
-                  <CheckCircle className="h-3 w-3 mr-1" /> Paiement confirmé
-                </Badge>
-              )}
-              {invoice.payment_source === 'app' && (
-                <Badge className="bg-blue-100 text-blue-800">
-                  <Smartphone className="h-3 w-3 mr-1" /> Reçu via l&apos;application
-                </Badge>
-              )}
-              {invoice.payment_source === 'offline' && (
-                <Badge className="bg-orange-100 text-orange-800">
-                  <Building2 className="h-3 w-3 mr-1" /> Reçu en dehors
-                </Badge>
-              )}
+            <div className="flex gap-3 pt-2">
+              {invoice.payment_status === 'paid' && <Badge className="bg-green-100 text-green-700 border-0"><CheckCircle className="h-3 w-3 mr-1" /> Paiement confirmé</Badge>}
+              {invoice.payment_source === 'app' && <Badge className="bg-blue-100 text-blue-700 border-0"><Smartphone className="h-3 w-3 mr-1" /> Via l'application</Badge>}
+              {invoice.payment_source === 'offline' && <Badge className="bg-orange-100 text-orange-700 border-0"><Building2 className="h-3 w-3 mr-1" /> En dehors</Badge>}
             </div>
           </CardContent>
         </Card>
@@ -553,24 +385,21 @@ export default function InvoiceDetailPage() {
 
       {/* Payment methods */}
       {(invoice.status === 'sent' || invoice.status === 'overdue') && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Moyens de paiement acceptés</CardTitle>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Moyens de paiement acceptés</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
-              <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-lg">
-                <CreditCard className="h-5 w-5 text-blue-600" />
-                <span className="text-sm font-medium">Wave</span>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-orange-50 rounded-lg">
-                <CreditCard className="h-5 w-5 text-orange-600" />
-                <span className="text-sm font-medium">Orange Money</span>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 rounded-lg">
-                <CreditCard className="h-5 w-5 text-purple-600" />
-                <span className="text-sm font-medium">Visa / Mastercard</span>
-              </div>
+            <div className="flex gap-3 flex-wrap">
+              {[
+                { name: 'Wave', color: 'bg-blue-50 text-blue-700', icon: '💙' },
+                { name: 'Orange Money', color: 'bg-orange-50 text-orange-700', icon: '🟠' },
+                { name: 'Visa / Mastercard', color: 'bg-purple-50 text-purple-700', icon: '💳' },
+              ].map(method => (
+                <div key={method.name} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl ${method.color} font-medium text-sm`}>
+                  <span>{method.icon}</span> {method.name}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

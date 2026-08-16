@@ -88,80 +88,72 @@ export default function DashboardLayout({
     router.push('/login')
   }
 
+  const NavLink = ({ item, onClick }: { item: { name: string; href: string; icon: any }; onClick?: () => void }) => {
+    const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+    return (
+      <Link
+        href={item.href}
+        className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+          isActive
+            ? 'bg-blue-50 text-blue-700 shadow-sm shadow-blue-100'
+            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+        }`}
+        onClick={onClick}
+      >
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+          isActive ? 'bg-blue-100' : 'bg-gray-100 group-hover:bg-gray-200'
+        }`}>
+          <item.icon className={`h-4 w-4 ${isActive ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'}`} />
+        </div>
+        {item.name}
+      </Link>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50/80">
       {/* Mobile sidebar */}
-      <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? '' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-900/80" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
-          <div className="flex items-center justify-between p-4 border-b">
-            <Link href="/" className="flex items-center gap-2">
-              <FileText className="h-7 w-7 text-blue-600" />
+      <div className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+        <div className={`fixed inset-y-0 left-0 w-72 bg-white shadow-2xl transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="flex items-center justify-between p-5 border-b border-gray-100">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+                <FileText className="h-5 w-5 text-white" />
+              </div>
               <span className="text-lg font-bold text-gray-900">NA-Leer</span>
             </Link>
-            <button onClick={() => setSidebarOpen(false)}>
+            <button onClick={() => setSidebarOpen(false)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
               <X className="h-5 w-5 text-gray-500" />
             </button>
           </div>
           <nav className="p-4 space-y-1">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
-                </Link>
-              )
-            })}
+            {navigation.map((item) => (
+              <NavLink key={item.name} item={item} onClick={() => setSidebarOpen(false)} />
+            ))}
             {isBusiness && (
               <>
-                <div className="pt-3 pb-1 px-3">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Business</p>
+                <div className="pt-4 pb-2 px-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Business</p>
                 </div>
-                {businessNavigation.map((item) => {
-                  const isActive = pathname === item.href
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'bg-purple-50 text-purple-700'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      {item.name}
-                    </Link>
-                  )
-                })}
+                {businessNavigation.map((item) => (
+                  <NavLink key={item.name} item={item} onClick={() => setSidebarOpen(false)} />
+                ))}
               </>
             )}
             {profile?.is_admin && (
               <>
-                <div className="pt-3 pb-1 px-3">
-                  <p className="text-xs font-semibold text-red-400 uppercase tracking-wider">Administration</p>
+                <div className="pt-4 pb-2 px-3">
+                  <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Admin</p>
                 </div>
                 <Link
                   href="/admin/login"
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    pathname.startsWith('/admin')
-                      ? 'bg-red-50 text-red-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-700 transition-colors"
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <Shield className="h-5 w-5" />
+                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-red-500" />
+                  </div>
                   Admin Panel
                 </Link>
               </>
@@ -171,82 +163,59 @@ export default function DashboardLayout({
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex grow flex-col bg-white border-r border-gray-200">
-          <div className="flex items-center gap-2 p-5 border-b">
-            <FileText className="h-7 w-7 text-blue-600" />
+      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72 lg:flex-col">
+        <div className="flex grow flex-col bg-white border-r border-gray-200/80">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5 p-5 border-b border-gray-100">
+            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200/50">
+              <FileText className="h-5 w-5 text-white" />
+            </div>
             <span className="text-lg font-bold text-gray-900">NA-Leer</span>
           </div>
-          <nav className="flex-1 p-4 space-y-1">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
-                </Link>
-              )
-            })}
+
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+            {navigation.map((item) => (
+              <NavLink key={item.name} item={item} />
+            ))}
             {isBusiness && (
               <>
-                <div className="pt-3 pb-1 px-3">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Business</p>
+                <div className="pt-4 pb-2 px-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Business</p>
                 </div>
-                {businessNavigation.map((item) => {
-                  const isActive = pathname === item.href
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'bg-purple-50 text-purple-700'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      {item.name}
-                    </Link>
-                  )
-                })}
+                {businessNavigation.map((item) => (
+                  <NavLink key={item.name} item={item} />
+                ))}
               </>
             )}
             {profile?.is_admin && (
               <>
-                <div className="pt-3 pb-1 px-3">
-                  <p className="text-xs font-semibold text-red-400 uppercase tracking-wider">Administration</p>
+                <div className="pt-4 pb-2 px-3">
+                  <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Admin</p>
                 </div>
                 <Link
                   href="/admin/login"
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    pathname.startsWith('/admin')
-                      ? 'bg-red-50 text-red-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-700 transition-colors"
                 >
-                  <Shield className="h-5 w-5" />
+                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-red-500" />
+                  </div>
                   Admin Panel
                 </Link>
               </>
             )}
           </nav>
-          <div className="p-4 border-t">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-sm font-semibold text-blue-600">
+
+          {/* User profile */}
+          <div className="p-4 border-t border-gray-100">
+            <div className="flex items-center gap-3 mb-3 p-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-sm">
+                <span className="text-sm font-bold text-white">
                   {profile?.full_name?.charAt(0) || '?'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-semibold text-gray-900 truncate">
                   {profile?.full_name || 'Chargement...'}
                 </p>
                 <p className="text-xs text-gray-500 truncate">
@@ -254,33 +223,37 @@ export default function DashboardLayout({
                 </p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 text-gray-600"
+            <button
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4" />
               Déconnexion
-            </Button>
+            </button>
           </div>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="lg:pl-72">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-white px-4 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-gray-200/80 bg-white/80 backdrop-blur-lg px-4 sm:px-6 lg:px-8">
           <button
-            className="lg:hidden"
+            className="lg:hidden p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors"
             onClick={() => setSidebarOpen(true)}
           >
-            <Menu className="h-6 w-6 text-gray-600" />
+            <Menu className="h-5 w-5 text-gray-600" />
           </button>
           <div className="flex-1" />
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500 hidden sm:block">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500 hidden sm:block font-medium">
               {profile?.company_name || profile?.email}
             </span>
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center lg:hidden">
+              <span className="text-xs font-bold text-white">
+                {profile?.full_name?.charAt(0) || '?'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -289,7 +262,7 @@ export default function DashboardLayout({
           {children}
         </main>
 
-        <footer className="border-t bg-white px-4 sm:px-6 lg:px-8 py-4 text-center text-xs text-gray-400">
+        <footer className="border-t border-gray-200/80 bg-white px-4 sm:px-6 lg:px-8 py-4 text-center text-xs text-gray-400 font-medium">
           by Minimum Tech Company
         </footer>
       </div>
