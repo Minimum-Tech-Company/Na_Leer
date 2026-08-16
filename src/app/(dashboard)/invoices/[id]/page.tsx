@@ -111,7 +111,7 @@ export default function InvoiceDetailPage() {
 
   const handleDownloadPDF = async () => {
     if (invoice && profile) {
-      await downloadPDF(invoice, profile, items)
+      await downloadPDF(invoice, profile, items, undefined, paymentUrl || undefined)
     }
   }
 

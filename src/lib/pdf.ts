@@ -2,8 +2,19 @@
 
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import QRCode from 'qrcode'
 import { Invoice, InvoiceItem, Profile, InvoiceTemplate } from '@/types'
-import { formatCurrency, formatDate } from './utils'
+
+function hexToRgb(hex: string): [number, number, number] {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result
+    ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+    : [41, 128, 185]
+}
+
+function fmtAmount(n: number): string {
+  return new Intl.NumberFormat('fr-FR').format(Math.round(n))
+}
 
 async function loadImage(url: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -15,230 +26,233 @@ async function loadImage(url: string): Promise<HTMLImageElement | null> {
   })
 }
 
-function hexToRgb(hex: string): [number, number, number] {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  return result
-    ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
-    : [41, 128, 185]
-}
-
 export async function generateInvoicePDF(
   invoice: Invoice,
   profile: Profile,
   items: InvoiceItem[],
-  template?: InvoiceTemplate | null
+  template?: InvoiceTemplate | null,
+  paymentUrl?: string
 ): Promise<jsPDF> {
   const doc = new jsPDF()
-  const pageWidth = doc.internal.pageSize.getWidth()
+  const pw = doc.internal.pageSize.getWidth()
+  const ph = doc.internal.pageSize.getHeight()
+  const primary = hexToRgb(template?.primary_color || '#2563EB')
+  const currency = invoice.currency || 'XOF'
 
-  const primaryRgb = hexToRgb(template?.primary_color || '#2980B9')
-  const accentRgb = hexToRgb(template?.accent_color || '#1E40AF')
-  const showLogo = template?.show_logo !== false
-  const showTaxId = template?.show_tax_id !== false
-  const showRccm = template?.show_rccm !== false
-  const footerText = template?.footer_text || 'Merci pour votre paiement'
+  // ── Header background ──
+  doc.setFillColor(primary[0], primary[1], primary[2])
+  doc.rect(0, 0, pw, 42, 'F')
 
-  let y = 15
-
-  // Logo
-  if (showLogo && profile.logo_url) {
-    const logo = await loadImage(profile.logo_url)
-    if (logo) {
-      const logoHeight = 18
-      const logoWidth = (logo.width / logo.height) * logoHeight
-      doc.addImage(logo, 'PNG', 14, y, Math.min(logoWidth, 40), logoHeight)
-      y += logoHeight + 4
-    }
+  // ── Logo ──
+  let headerRight = pw - 14
+  if (profile.logo_url) {
+    try {
+      const logo = await loadImage(profile.logo_url)
+      if (logo) {
+        const maxH = 22
+        const ratio = logo.width / logo.height
+        let w = maxH * ratio
+        if (w > 50) w = 50
+        doc.addImage(logo, 'PNG', 14, 10, w, maxH)
+      }
+    } catch { /* skip */ }
   }
 
-  // Company name
-  doc.setFontSize(showLogo && profile.logo_url ? 14 : 20)
+  // ── Company name (white on blue) ──
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text(profile.company_name || 'Votre Entreprise', 14, y)
-  y += 7
+  doc.text(profile.company_name || 'Votre Entreprise', 14, 38)
 
+  // ── "FACTURE" title ──
+  doc.setFontSize(28)
+  doc.setFont('helvetica', 'bold')
+  doc.text('FACTURE', pw - 14, 22, { align: 'right' })
+
+  // ── Invoice meta (right side, white) ──
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
+  const meta = [
+    `N° ${invoice.invoice_number}`,
+    `Date : ${new Date(invoice.issue_date).toLocaleDateString('fr-FR')}`,
+    `Échéance : ${new Date(invoice.due_date).toLocaleDateString('fr-FR')}`,
+  ]
+  const statusMap: Record<string, string> = {
+    draft: 'BROUILLON', sent: 'ENVOYÉE', paid: 'PAYÉE', overdue: 'EN RETARD', cancelled: 'ANNULÉE',
+  }
+  meta.push(`Statut : ${statusMap[invoice.status] || invoice.status}`)
+  let my = 38
+  meta.forEach(line => {
+    doc.text(line, pw - 14, my, { align: 'right' })
+    my -= 4.5
+  })
+
+  // ── Reset colors ──
+  doc.setTextColor(0, 0, 0)
+  let y = 50
+
+  // ── Bill To ──
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(120, 120, 120)
+  doc.text('FACTURER À', 14, y)
+  y += 5
+  doc.setTextColor(0, 0, 0)
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'bold')
+  doc.text(invoice.client?.name || 'Client', 14, y)
+  y += 5
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9)
   doc.setTextColor(80, 80, 80)
+  if (invoice.client?.address) { doc.text(invoice.client.address, 14, y); y += 4 }
+  if (invoice.client?.city) { doc.text(invoice.client.city, 14, y); y += 4 }
+  if (invoice.client?.email) { doc.text(invoice.client.email, 14, y); y += 4 }
 
-  if (profile.company_address) {
-    doc.text(profile.company_address, 14, y)
-    y += 4
-  }
-  if (profile.ville || profile.pays) {
-    doc.text(`${profile.ville || ''}${profile.ville && profile.pays ? ', ' : ''}${profile.pays || ''}`, 14, y)
-    y += 4
-  }
-  if (profile.company_phone) {
-    doc.text(`Tél: ${profile.company_phone}`, 14, y)
-    y += 4
-  }
-  if (profile.company_email) {
-    doc.text(profile.company_email, 14, y)
-    y += 4
-  }
-  if (showTaxId && profile.tax_id) {
-    doc.text(`NINEA: ${profile.tax_id}`, 14, y)
-    y += 4
-  }
-  if (showRccm && profile.rccm) {
-    doc.text(`RCCM: ${profile.rccm}`, 14, y)
-    y += 4
-  }
-
-  // Invoice title
-  doc.setFontSize(24)
+  // ── Company info (right of client) ──
+  let ciY = y - (invoice.client?.email ? 12 : invoice.client?.city ? 8 : 4)
+  doc.setFontSize(8)
+  doc.setTextColor(120, 120, 120)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(primaryRgb[0], primaryRgb[1], primaryRgb[2])
-  doc.text('FACTURE', pageWidth - 14, 20, { align: 'right' })
-
-  // Invoice details
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
+  doc.text('DE', pw - 14, ciY - 5, { align: 'right' })
+  ciY -= 0
   doc.setTextColor(0, 0, 0)
-
-  const detailsX = pageWidth - 14
-  let detailsY = 30
-
-  doc.text(`Numéro: ${invoice.invoice_number}`, detailsX, detailsY, { align: 'right' })
-  detailsY += 5
-  doc.text(`Date: ${formatDate(invoice.issue_date)}`, detailsX, detailsY, { align: 'right' })
-  detailsY += 5
-  doc.text(`Échéance: ${formatDate(invoice.due_date)}`, detailsX, detailsY, { align: 'right' })
-  detailsY += 5
-
-  const statusLabels: Record<string, string> = {
-    draft: 'Brouillon',
-    sent: 'Envoyée',
-    paid: 'Payée',
-    overdue: 'En retard',
-    cancelled: 'Annulée',
-  }
-  doc.text(`Statut: ${statusLabels[invoice.status] || invoice.status}`, detailsX, detailsY, { align: 'right' })
-  detailsY += 5
-
-  if (invoice.status === 'paid' && invoice.payment_method) {
-    doc.setTextColor(39, 174, 96)
-    doc.text(`Payé via: ${invoice.payment_method}`, detailsX, detailsY, { align: 'right' })
-    doc.setTextColor(0, 0, 0)
-  }
-
-  // Divider line
-  doc.setDrawColor(primaryRgb[0], primaryRgb[1], primaryRgb[2])
-  doc.setLineWidth(0.5)
-  y = Math.max(y, detailsY) + 8
-  doc.line(14, y, pageWidth - 14, y)
-  y += 10
-
-  // Client info
-  doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('Facturer à:', 14, y)
-
-  y += 7
-  doc.setFontSize(10)
+  doc.setFontSize(9)
+  doc.text(profile.company_name || '', pw - 14, ciY, { align: 'right' })
+  ciY += 4
   doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8)
+  doc.setTextColor(80, 80, 80)
+  if (profile.company_address) { doc.text(profile.company_address, pw - 14, ciY, { align: 'right' }); ciY += 3.5 }
+  if (profile.ville || profile.pays) { doc.text(`${profile.ville || ''}${profile.ville && profile.pays ? ', ' : ''}${profile.pays || ''}`, pw - 14, ciY, { align: 'right' }); ciY += 3.5 }
+  if (profile.company_phone) { doc.text(`Tél: ${profile.company_phone}`, pw - 14, ciY, { align: 'right' }); ciY += 3.5 }
+  if (profile.tax_id) { doc.text(`NINEA: ${profile.tax_id}`, pw - 14, ciY, { align: 'right' }); ciY += 3.5 }
+  if (profile.rccm) { doc.text(`RCCM: ${profile.rccm}`, pw - 14, ciY, { align: 'right' }) }
 
-  if (invoice.client) {
-    doc.setFont('helvetica', 'bold')
-    doc.text(invoice.client.name, 14, y)
-    doc.setFont('helvetica', 'normal')
-    y += 5
-    if (invoice.client.address) {
-      doc.text(invoice.client.address, 14, y)
-      y += 5
-    }
-    if (invoice.client.city) {
-      doc.text(invoice.client.city, 14, y)
-      y += 5
-    }
-    if (invoice.client.email) {
-      doc.text(invoice.client.email, 14, y)
-      y += 5
-    }
-  }
+  y = Math.max(y, ciY) + 6
 
-  // Items table
+  // ── Divider ──
+  doc.setDrawColor(230, 230, 230)
+  doc.setLineWidth(0.3)
+  doc.line(14, y, pw - 14, y)
   y += 8
 
-  const tableData = items.map((item) => [
+  // ── Items table ──
+  const currencySymbol = currency === 'XOF' ? 'FCFA' : currency
+  const tableData = items.map(item => [
     item.description,
     item.quantity.toString(),
-    formatCurrency(item.unit_price, invoice.currency),
-    formatCurrency(item.amount, invoice.currency),
+    `${fmtAmount(item.unit_price)} ${currencySymbol}`,
+    `${fmtAmount(item.amount)} ${currencySymbol}`,
   ])
 
   autoTable(doc, {
     startY: y,
     head: [['Description', 'Qté', 'Prix unitaire', 'Montant']],
     body: tableData,
-    theme: 'grid',
+    theme: 'striped',
     headStyles: {
-      fillColor: primaryRgb,
+      fillColor: primary,
       textColor: 255,
       fontStyle: 'bold',
+      fontSize: 8,
+      cellPadding: 3,
     },
     styles: {
-      fontSize: 9,
+      fontSize: 8,
+      cellPadding: 2.5,
+      textColor: [50, 50, 50],
+      lineColor: [240, 240, 240],
+      lineWidth: 0.2,
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
     },
     columnStyles: {
-      0: { cellWidth: 80 },
-      1: { cellWidth: 20, halign: 'center' },
-      2: { cellWidth: 40, halign: 'right' },
-      3: { cellWidth: 40, halign: 'right' },
+      0: { cellWidth: 76 },
+      1: { cellWidth: 16, halign: 'center' },
+      2: { cellWidth: 42, halign: 'right' },
+      3: { cellWidth: 42, halign: 'right', fontStyle: 'bold' },
     },
   })
 
-  // Totals
+  // ── Totals ──
   const finalY = (doc as any).lastAutoTable.finalY + 10
-  const totalsX = pageWidth - 70
+  const totalsX = pw - 72
 
-  doc.setFontSize(10)
+  doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  doc.setTextColor(0, 0, 0)
+  doc.setTextColor(100, 100, 100)
 
-  doc.text('Sous-total:', totalsX, finalY)
-  doc.text(formatCurrency(invoice.subtotal, invoice.currency), pageWidth - 14, finalY, { align: 'right' })
+  doc.text('Sous-total', totalsX, finalY)
+  doc.text(`${fmtAmount(invoice.subtotal)} ${currencySymbol}`, pw - 14, finalY, { align: 'right' })
 
-  doc.text(`TVA (${invoice.tax_rate}%):`, totalsX, finalY + 7)
-  doc.text(formatCurrency(invoice.tax_amount, invoice.currency), pageWidth - 14, finalY + 7, { align: 'right' })
+  doc.text(`TVA (${invoice.tax_rate}%)`, totalsX, finalY + 6)
+  doc.text(`${fmtAmount(invoice.tax_amount)} ${currencySymbol}`, pw - 14, finalY + 6, { align: 'right' })
 
-  doc.setDrawColor(primaryRgb[0], primaryRgb[1], primaryRgb[2])
-  doc.setLineWidth(0.3)
-  doc.line(totalsX, finalY + 11, pageWidth - 14, finalY + 11)
-
-  doc.setFontSize(12)
+  // Total box
+  doc.setFillColor(primary[0], primary[1], primary[2])
+  doc.roundedRect(totalsX - 2, finalY + 10, pw - totalsX - 12, 12, 2, 2, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(11)
   doc.setFont('helvetica', 'bold')
-  doc.text('TOTAL:', totalsX, finalY + 18)
-  doc.text(formatCurrency(invoice.total, invoice.currency), pageWidth - 14, finalY + 18, { align: 'right' })
+  doc.text('TOTAL', totalsX + 2, finalY + 18)
+  doc.text(`${fmtAmount(invoice.total)} ${currencySymbol}`, pw - 14, finalY + 18, { align: 'right' })
 
-  // Notes
+  // ── Notes ──
+  let notesY = finalY + 30
   if (invoice.notes) {
-    doc.setFontSize(10)
+    doc.setTextColor(100, 100, 100)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.text('NOTES', 14, notesY)
+    notesY += 4
     doc.setFont('helvetica', 'normal')
-    doc.setTextColor(80, 80, 80)
-    doc.text('Notes:', 14, finalY + 35)
-    doc.setFont('helvetica', 'italic')
-    const splitNotes = doc.splitTextToSize(invoice.notes, pageWidth - 28)
-    doc.text(splitNotes, 14, finalY + 42)
+    doc.setFontSize(8)
+    const splitNotes = doc.splitTextToSize(invoice.notes, pw - 28)
+    doc.text(splitNotes, 14, notesY)
+    notesY += splitNotes.length * 3.5 + 4
   }
 
-  // Footer
-  doc.setFontSize(8)
+  // ── QR Code ──
+  const qrUrl = paymentUrl || `${typeof window !== 'undefined' ? window.location.origin : 'https://na-leer.org'}/invoices/${invoice.id}`
+  try {
+    const qrDataUrl = await QRCode.toDataURL(qrUrl, {
+      width: 120,
+      margin: 1,
+      color: { dark: '#000000', light: '#ffffff' },
+    })
+    const qrSize = 22
+    const qrY = ph - 18 - qrSize
+    doc.addImage(qrDataUrl, 'PNG', 14, qrY, qrSize, qrSize)
+
+    doc.setFontSize(7)
+    doc.setTextColor(120, 120, 120)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Scannez pour payer', 14, qrY + qrSize + 3)
+  } catch { /* skip qr */ }
+
+  // ── Footer ──
+  doc.setDrawColor(230, 230, 230)
+  doc.setLineWidth(0.3)
+  doc.line(14, ph - 14, pw - 14, ph - 14)
+
+  doc.setFontSize(7)
+  doc.setTextColor(150, 150, 150)
   doc.setFont('helvetica', 'normal')
-  doc.setTextColor(128, 128, 128)
-  doc.text(
-    `${footerText} - Généré par NA-Leer`,
-    pageWidth / 2,
-    doc.internal.pageSize.getHeight() - 10,
-    { align: 'center' }
-  )
+  doc.text(`${template?.footer_text || 'Merci pour votre paiement'}  •  Généré par NA-Leer`, pw / 2, ph - 9, { align: 'center' })
 
   return doc
 }
 
-export async function downloadPDF(invoice: Invoice, profile: Profile, items: InvoiceItem[], template?: InvoiceTemplate | null) {
-  const doc = await generateInvoicePDF(invoice, profile, items, template)
+export async function downloadPDF(
+  invoice: Invoice,
+  profile: Profile,
+  items: InvoiceItem[],
+  template?: InvoiceTemplate | null,
+  paymentUrl?: string
+) {
+  const doc = await generateInvoicePDF(invoice, profile, items, template, paymentUrl)
   doc.save(`${invoice.invoice_number}.pdf`)
 }
