@@ -6,10 +6,8 @@ export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text()
     const body = JSON.parse(rawBody)
-    const { event, data } = body
 
     const signature = request.headers.get('x-dexchange-signature') || ''
-
     const secret = process.env.DEXCHANGE_WEBHOOK_SECRET
     if (!secret) {
       console.error('DEXCHANGE_WEBHOOK_SECRET not configured - rejecting webhook')
@@ -22,11 +20,57 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
+    // Direct transaction webhook format (from transaction/init)
+    if (body.STATUS && body.externalTransactionId) {
+      const reference = body.externalTransactionId
+      const status = body.STATUS
+
+      if (status === 'SUCCESS' && reference.startsWith('SUB-')) {
+        const parts = reference.split('-')
+        if (parts.length >= 3) {
+          const planId = parts[1]
+          // Extract user ID from planId or use a lookup
+          // The reference format is: SUB-{plan_id}-{timestamp}
+          // We need to find the subscription request to get the user_id
+          // Since we store pending subscriptions, let's look it up
+          const { data: pending } = await supabase
+            .from('pending_subscriptions')
+            .select('user_id')
+            .eq('reference', reference)
+            .single()
+
+          if (pending?.user_id) {
+            const expiresAt = new Date()
+            expiresAt.setMonth(expiresAt.getMonth() + 1)
+
+            await supabase.from('subscriptions').insert({
+              user_id: pending.user_id,
+              plan_id: planId,
+              status: 'active',
+              started_at: new Date().toISOString(),
+              expires_at: expiresAt.toISOString(),
+              dexchange_transaction_id: body.id || reference,
+            })
+
+            await supabase.from('pending_subscriptions')
+              .delete()
+              .eq('reference', reference)
+
+            console.log(`Direct subscription created for user ${pending.user_id}, plan ${planId}`)
+          }
+        }
+      }
+
+      return NextResponse.json({ received: true })
+    }
+
+    // Legacy checkout webhook format (from merchant payment links)
+    const { event, data } = body
+
     if (event === 'checkout.completed') {
       const reference = data?.reference || ''
       const metadata = data?.metadata || {}
 
-      // Handle subscription payments
       if (metadata.type === 'subscription' || reference.startsWith('SUB-')) {
         const userId = metadata.user_id
         const planId = metadata.plan_id
@@ -49,9 +93,7 @@ export async function POST(request: NextRequest) {
         })
 
         console.log(`Subscription created for user ${userId}, plan ${planId}`)
-      }
-      // Handle invoice payments
-      else if (metadata.type === 'invoice' || reference.startsWith('INV-')) {
+      } else if (metadata.type === 'invoice' || reference.startsWith('INV-')) {
         const invoiceId = metadata.invoice_id
 
         if (invoiceId) {

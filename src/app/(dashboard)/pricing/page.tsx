@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle, X, CreditCard, Zap, Crown } from 'lucide-react'
+import { CheckCircle, X, CreditCard, Zap, Crown, Phone, Smartphone } from 'lucide-react'
 import { Plan, Subscription } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
@@ -21,12 +21,23 @@ const planColors: Record<string, string> = {
   business: 'bg-purple-100 text-purple-600',
 }
 
+const PROVIDERS = [
+  { id: 'orange', name: 'Orange Money', color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200', icon: '📱' },
+  { id: 'wave', name: 'Wave', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200', icon: '〰️' },
+  { id: 'free', name: 'Free Money', color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200', icon: '📲' },
+]
+
 export default function PricingPage() {
   const [plans, setPlans] = useState<Plan[]>([])
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null)
   const [currentPlanId, setCurrentPlanId] = useState<string>('free')
   const [loading, setLoading] = useState(true)
   const [purchasing, setPurchasing] = useState<string | null>(null)
+  const [showPaymentModal, setShowPaymentModal] = useState<string | null>(null)
+  const [phone, setPhone] = useState('')
+  const [provider, setProvider] = useState('orange')
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'sending' | 'waiting' | 'success' | 'error'>('idle')
+  const [paymentMessage, setPaymentMessage] = useState('')
   const supabase = createClient()
 
   useEffect(() => {
@@ -59,50 +70,57 @@ export default function PricingPage() {
     fetchData()
   }, [supabase])
 
-  const handlePurchase = async (planId: string) => {
+  const handlePurchaseClick = (planId: string) => {
     const plan = plans.find(p => p.id === planId)
     if (!plan || plan.price_xof === 0) return
+    setShowPaymentModal(planId)
+    setPhone('')
+    setProvider('orange')
+    setPaymentStatus('idle')
+    setPaymentMessage('')
+  }
 
-    setPurchasing(planId)
+  const handleDirectPay = async () => {
+    if (!showPaymentModal) return
+    const cleanPhone = phone.replace(/\s/g, '').replace(/^221/, '')
+    if (!/^[0-9]{9}$/.test(cleanPhone)) {
+      setPaymentStatus('error')
+      setPaymentMessage('Numéro invalide. Entrez 9 chiffres (ex: 771234567)')
+      return
+    }
+
+    setPaymentStatus('sending')
+    setPaymentMessage('Initialisation du paiement...')
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        window.location.href = '/login'
-        return
-      }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, email')
-        .eq('id', user.id)
-        .single()
-
-      const response = await fetch('/api/subscription', {
+      const response = await fetch('/api/subscription/direct-pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          plan_id: planId,
-          amount: plan.price_xof,
-          customer_name: profile?.full_name || '',
-          customer_email: profile?.email || '',
-          phone: '000000000',
+          plan_id: showPaymentModal,
+          phone: cleanPhone,
+          provider,
         }),
       })
 
       const data = await response.json()
-      console.log('Payment response:', data)
 
-      if (data.payment_url) {
-        window.location.href = data.payment_url
-      } else {
-        alert('Erreur: ' + (data.error || 'Impossible de créer le paiement'))
-        setPurchasing(null)
+      if (!response.ok) {
+        setPaymentStatus('error')
+        setPaymentMessage(data.error || 'Erreur lors de l\'initialisation')
+        return
       }
+
+      setPaymentStatus('waiting')
+      setPaymentMessage('Notification envoyée sur votre téléphone. Validez le paiement via USSD.')
+
+      setTimeout(() => {
+        setShowPaymentModal(null)
+        setPaymentStatus('idle')
+      }, 5000)
     } catch (err: any) {
-      console.error('Erreur paiement:', err)
-      alert('Erreur: ' + (err.message || 'Erreur de connexion au service de paiement'))
-      setPurchasing(null)
+      setPaymentStatus('error')
+      setPaymentMessage(err.message || 'Erreur de connexion')
     }
   }
 
@@ -154,19 +172,11 @@ export default function PricingPage() {
               <CardContent>
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center gap-2 text-sm">
-                    {plan.max_invoices !== null ? (
-                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    ) : (
-                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    )}
+                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                     <span>{plan.max_invoices === null ? 'Factures illimitées' : `${plan.max_invoices} factures/mois`}</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm">
-                    {plan.max_clients !== null ? (
-                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    ) : (
-                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    )}
+                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                     <span>{plan.max_clients === null ? 'Clients illimités' : `${plan.max_clients} clients`}</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm">
@@ -223,7 +233,7 @@ export default function PricingPage() {
                   ) : (
                     <Button
                       className="w-full"
-                      onClick={() => handlePurchase(plan.id)}
+                      onClick={() => handlePurchaseClick(plan.id)}
                       disabled={purchasing === plan.id}
                     >
                       {purchasing === plan.id ? 'Redirection...' : `Passer au ${plan.name}`}
@@ -239,20 +249,108 @@ export default function PricingPage() {
       <div className="bg-gray-50 rounded-lg p-6 mt-8">
         <h3 className="font-semibold text-gray-900 mb-2">Moyens de paiement acceptés</h3>
         <div className="flex gap-4 flex-wrap">
-          <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border">
-            <CreditCard className="h-5 w-5 text-blue-600" />
-            <span className="text-sm">Wave</span>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border">
-            <CreditCard className="h-5 w-5 text-orange-600" />
-            <span className="text-sm">Orange Money</span>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border">
-            <CreditCard className="h-5 w-5 text-purple-600" />
-            <span className="text-sm">Visa / Mastercard</span>
-          </div>
+          {PROVIDERS.map(p => (
+            <div key={p.id} className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border">
+              <Smartphone className={`h-5 w-5 ${p.color}`} />
+              <span className="text-sm">{p.name}</span>
+            </div>
+          ))}
         </div>
       </div>
+
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">
+                Payer {plans.find(p => p.id === showPaymentModal)?.name}
+              </h2>
+              <button
+                onClick={() => setShowPaymentModal(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="text-center py-2">
+              <span className="text-3xl font-bold text-gray-900">
+                {formatCurrency(plans.find(p => p.id === showPaymentModal)?.price_xof || 0)}
+              </span>
+              <span className="text-gray-500">/mois</span>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Numéro de téléphone
+              </label>
+              <div className="flex items-center gap-2 border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+                <Phone className="h-4 w-4 text-gray-400" />
+                <span className="text-sm text-gray-500">+221</span>
+                <input
+                  type="tel"
+                  placeholder="77 123 45 67"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="flex-1 outline-none text-sm"
+                  maxLength={12}
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-1">9 chiffres sans l'indicatif pays</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Moyen de paiement
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {PROVIDERS.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => setProvider(p.id)}
+                    className={`p-3 rounded-lg border-2 text-center transition-all ${
+                      provider === p.id
+                        ? `${p.bg} border-current ring-2 ring-current/20`
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="text-lg mb-1">{p.icon}</div>
+                    <div className={`text-xs font-medium ${provider === p.id ? p.color : 'text-gray-600'}`}>
+                      {p.name}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {paymentMessage && (
+              <div className={`p-3 rounded-lg text-sm ${
+                paymentStatus === 'error' ? 'bg-red-50 text-red-700' :
+                paymentStatus === 'waiting' ? 'bg-blue-50 text-blue-700' :
+                paymentStatus === 'success' ? 'bg-green-50 text-green-700' :
+                'bg-gray-50 text-gray-700'
+              }`}>
+                {paymentStatus === 'waiting' && <Smartphone className="h-4 w-4 inline mr-1 animate-pulse" />}
+                {paymentMessage}
+              </div>
+            )}
+
+            <Button
+              onClick={handleDirectPay}
+              disabled={!phone || paymentStatus === 'sending' || paymentStatus === 'waiting'}
+              className="w-full"
+            >
+              {paymentStatus === 'sending' ? 'Envoi en cours...' :
+               paymentStatus === 'waiting' ? 'En attente de confirmation...' :
+               'Payer maintenant'}
+            </Button>
+
+            <p className="text-xs text-center text-gray-400">
+              Vous recevrez une notification USSD sur votre téléphone. Confirmez le paiement directement.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
