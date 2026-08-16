@@ -169,7 +169,10 @@ export default function LoginPage() {
 
           <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-200 text-center">
             <p className="text-xs text-gray-400">
-              En vous connectant, vous acceptez nos conditions d&apos;utilisation
+              En vous connectant, vous acceptez nos{' '}
+              <Link href="/terms" className="underline hover:text-gray-600">conditions d&apos;utilisation</Link>{' '}
+              et notre{' '}
+              <Link href="/privacy" className="underline hover:text-gray-600">politique de confidentialité</Link>
             </p>
           </div>
           <div className="text-center text-xs text-gray-400 mt-4 pb-4">

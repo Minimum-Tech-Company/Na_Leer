@@ -286,8 +286,12 @@ export default function DashboardLayout({
           {children}
         </main>
 
-        <footer className="border-t border-gray-200/80 bg-white px-4 sm:px-6 lg:px-8 py-4 text-center text-xs text-gray-400 font-medium">
-          by Minimum Tech Company
+        <footer className="border-t border-gray-200/80 bg-white px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400 font-medium">
+          <span>by Minimum Tech Company</span>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:text-gray-600 transition-colors">Politique de confidentialité</Link>
+            <Link href="/terms" className="hover:text-gray-600 transition-colors">Conditions d&apos;utilisation</Link>
+          </div>
         </footer>
       </div>
     </div>
