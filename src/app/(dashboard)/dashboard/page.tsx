@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -100,32 +100,39 @@ export default function DashboardPage() {
 
   const maxInvoiceTotal = Math.max(...invoices.map(i => Number(i.total)), 1)
 
-  // Daily revenue chart data for current month
-  const dailyRevenue = useMemo(() => {
-    const year = now.getFullYear()
-    const month = now.getMonth()
-    const daysInMonth = new Date(year, month + 1, 0).getDate()
-    const today = now.getDate()
+  // Rolling 7-day chart
+  const [dayOffset, setDayOffset] = useState(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
-    const days: { label: string; amount: number }[] = []
-    for (let d = 1; d <= today; d++) {
-      const date = new Date(year, month, d)
-      const dayStr = date.toISOString().split('T')[0]
+  const dailyRevenue = useMemo(() => {
+    const days: { label: string; dateStr: string; amount: number }[] = []
+    const today = new Date()
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today)
+      d.setDate(d.getDate() - i + dayOffset)
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      const dateStr = `${year}-${month}-${day}`
       const dayRevenue = paid
-        .filter(i => {
-          const paidDate = i.paid_at || i.created_at
-          return paidDate && paidDate.startsWith(dayStr)
+        .filter(inv => {
+          const paidDate = inv.paid_at || inv.created_at
+          return paidDate && paidDate.startsWith(dateStr)
         })
-        .reduce((sum, i) => sum + Number(i.total), 0)
+        .reduce((sum, inv) => sum + Number(inv.total), 0)
       days.push({
-        label: `${d}`,
+        label: `${d.getDate()}/${d.getMonth() + 1}`,
+        dateStr,
         amount: dayRevenue,
       })
     }
     return days
-  }, [paid, now])
+  }, [paid, dayOffset])
 
   const maxDailyRevenue = Math.max(...dailyRevenue.map(d => d.amount), 1)
+
+  const canScrollLeft = dayOffset > -30
+  const canScrollRight = dayOffset < 0
 
   if (loading) {
     return (
@@ -222,31 +229,53 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Daily Revenue Chart */}
+      {/* Daily Revenue Chart - Rolling 7 days */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <BarChart3 className="h-4 w-4" />
-            Revenus ce mois
+            Revenus des 7 derniers jours
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {dailyRevenue.length === 0 || dailyRevenue.every(d => d.amount === 0) ? (
-            <p className="text-gray-400 text-center py-8">Aucun revenu ce mois-ci</p>
+          {dailyRevenue.every(d => d.amount === 0) ? (
+            <p className="text-gray-400 text-center py-8">Aucun revenu sur cette période</p>
           ) : (
             <>
-              <div className="flex items-end gap-1 h-32">
+              <div className="flex items-center justify-between mb-2">
+                <button
+                  onClick={() => canScrollLeft && setDayOffset(o => o - 7)}
+                  disabled={!canScrollLeft}
+                  className="text-xs text-blue-600 hover:text-blue-800 disabled:text-gray-300 disabled:cursor-not-allowed flex items-center gap-1"
+                >
+                  ← Semaine précédente
+                </button>
+                <span className="text-xs text-gray-400">
+                  {dailyRevenue[0]?.dateStr} — {dailyRevenue[6]?.dateStr}
+                </span>
+                <button
+                  onClick={() => canScrollRight && setDayOffset(o => o + 7)}
+                  disabled={!canScrollRight}
+                  className="text-xs text-blue-600 hover:text-blue-800 disabled:text-gray-300 disabled:cursor-not-allowed flex items-center gap-1"
+                >
+                  Semaine suivante →
+                </button>
+              </div>
+              <div ref={scrollRef} className="flex items-end gap-2 h-32">
                 {dailyRevenue.map((day, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="text-[9px] text-gray-500 font-medium">
+                      {day.amount > 0 ? formatCurrency(day.amount) : ''}
+                    </span>
                     <div
-                      className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600 min-h-[2px]"
-                      style={{ height: `${(day.amount / maxDailyRevenue) * 100}%` }}
-                      title={`${formatCurrency(day.amount)} — ${day.label}`}
+                      className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600 cursor-pointer"
+                      style={{ height: day.amount > 0 ? `${Math.max((day.amount / maxDailyRevenue) * 100, 4)}%` : '2px' }}
+                      title={`${day.dateStr} — ${formatCurrency(day.amount)}`}
                     />
                   </div>
                 ))}
               </div>
-              <div className="flex gap-1 mt-2">
+              <div className="flex gap-2 mt-2">
                 {dailyRevenue.map((day, i) => (
                   <div key={i} className="flex-1 text-center text-[10px] text-gray-400">
                     {day.label}
@@ -254,8 +283,10 @@ export default function DashboardPage() {
                 ))}
               </div>
               <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                <span className="text-sm text-gray-500">Total ce mois</span>
-                <span className="font-bold text-green-600">{formatCurrency(revenueThisMonth)}</span>
+                <span className="text-sm text-gray-500">Total période</span>
+                <span className="font-bold text-green-600">
+                  {formatCurrency(dailyRevenue.reduce((s, d) => s + d.amount, 0))}
+                </span>
               </div>
             </>
           )}
