@@ -45,12 +45,13 @@ export async function updateSession(request: NextRequest) {
   const isAdminLogin = pathname === '/admin/login'
   const isAdminArea = pathname.startsWith('/admin')
   const isConfirmPage = pathname.startsWith('/auth/confirm')
+  const isPublicPage = pathname === '/privacy' || pathname === '/terms'
 
   if (isApiRoute) {
     return supabaseResponse
   }
 
-  if (!user && !isAuthPage && !isLandingPage && !isAdminLogin && !isAdminArea && !isConfirmPage) {
+  if (!user && !isAuthPage && !isLandingPage && !isAdminLogin && !isAdminArea && !isConfirmPage && !isPublicPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
