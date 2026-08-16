@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -19,7 +19,7 @@ import {
   FileText,
   CheckCircle,
   XCircle,
-  Calendar,
+  BarChart3,
 } from 'lucide-react'
 import { Invoice, Client, Payment } from '@/types'
 
@@ -27,6 +27,7 @@ export default function DashboardPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
+  const [planId, setPlanId] = useState<string>('free')
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
@@ -35,8 +36,34 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      const { data: sub } = await supabase
+        .from('subscriptions')
+        .select('plan_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      const activePlanId = sub?.plan_id || 'free'
+      setPlanId(activePlanId)
+
+      const startOfMonth = new Date()
+      startOfMonth.setDate(1)
+      startOfMonth.setHours(0, 0, 0, 0)
+
+      let invoiceQuery = supabase
+        .from('invoices')
+        .select('*, client:clients(name)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (activePlanId === 'free') {
+        invoiceQuery = invoiceQuery.gte('created_at', startOfMonth.toISOString())
+      }
+
       const [invoicesRes, clientsRes, paymentsRes] = await Promise.all([
-        supabase.from('invoices').select('*, client:clients(name)').eq('user_id', user.id).order('created_at', { ascending: false }),
+        invoiceQuery,
         supabase.from('clients').select('*').eq('user_id', user.id),
         supabase.from('payments').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
       ])
@@ -73,6 +100,33 @@ export default function DashboardPage() {
 
   const maxInvoiceTotal = Math.max(...invoices.map(i => Number(i.total)), 1)
 
+  // Daily revenue chart data for current month
+  const dailyRevenue = useMemo(() => {
+    const year = now.getFullYear()
+    const month = now.getMonth()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const today = now.getDate()
+
+    const days: { label: string; amount: number }[] = []
+    for (let d = 1; d <= today; d++) {
+      const date = new Date(year, month, d)
+      const dayStr = date.toISOString().split('T')[0]
+      const dayRevenue = paid
+        .filter(i => {
+          const paidDate = i.paid_at || i.created_at
+          return paidDate && paidDate.startsWith(dayStr)
+        })
+        .reduce((sum, i) => sum + Number(i.total), 0)
+      days.push({
+        label: `${d}`,
+        amount: dayRevenue,
+      })
+    }
+    return days
+  }, [paid, now])
+
+  const maxDailyRevenue = Math.max(...dailyRevenue.map(d => d.amount), 1)
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -81,12 +135,21 @@ export default function DashboardPage() {
     )
   }
 
+  const isFreePlan = planId === 'free'
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Vue d&apos;ensemble de votre activité</p>
+          <p className="text-gray-600">
+            Vue d&apos;ensemble de votre activité
+            {isFreePlan && (
+              <span className="ml-2 text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                Plan Gratuit — mois en cours
+              </span>
+            )}
+          </p>
         </div>
         <Link href="/invoices/new">
           <Button>
@@ -159,7 +222,47 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Revenue bar chart + monthly comparison */}
+      {/* Daily Revenue Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <BarChart3 className="h-4 w-4" />
+            Revenus ce mois
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dailyRevenue.length === 0 || dailyRevenue.every(d => d.amount === 0) ? (
+            <p className="text-gray-400 text-center py-8">Aucun revenu ce mois-ci</p>
+          ) : (
+            <>
+              <div className="flex items-end gap-1 h-32">
+                {dailyRevenue.map((day, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600 min-h-[2px]"
+                      style={{ height: `${(day.amount / maxDailyRevenue) * 100}%` }}
+                      title={`${formatCurrency(day.amount)} — ${day.label}`}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-1 mt-2">
+                {dailyRevenue.map((day, i) => (
+                  <div key={i} className="flex-1 text-center text-[10px] text-gray-400">
+                    {day.label}
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                <span className="text-sm text-gray-500">Total ce mois</span>
+                <span className="font-bold text-green-600">{formatCurrency(revenueThisMonth)}</span>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Revenue by invoice + monthly comparison */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardHeader>
