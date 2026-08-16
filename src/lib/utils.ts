@@ -14,11 +14,11 @@ export function formatCurrency(amount: number, currency: string = 'XOF'): string
 }
 
 export function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  })
+  const d = new Date(date)
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const yyyy = d.getFullYear()
+  return `${dd}.${mm}.${yyyy}`
 }
 
 export function generateInvoiceNumber(): string {

@@ -16,14 +16,28 @@ function fmtAmount(n: number): string {
   return new Intl.NumberFormat('fr-FR').format(Math.round(n))
 }
 
-async function loadImage(url: string): Promise<HTMLImageElement | null> {
-  return new Promise((resolve) => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => resolve(img)
-    img.onerror = () => resolve(null)
-    img.src = url
-  })
+function fmtDate(dateStr: string): string {
+  const d = new Date(dateStr)
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const yyyy = d.getFullYear()
+  return `${dd}.${mm}.${yyyy}`
+}
+
+async function fetchImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { mode: 'cors' })
+    if (!res.ok) return null
+    const blob = await res.blob()
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return null
+  }
 }
 
 export async function generateInvoicePDF(
@@ -38,24 +52,33 @@ export async function generateInvoicePDF(
   const ph = doc.internal.pageSize.getHeight()
   const primary = hexToRgb(template?.primary_color || '#2563EB')
   const currency = invoice.currency || 'XOF'
+  const curSymbol = currency === 'XOF' ? 'FCFA' : currency
 
   // ── Header background ──
   doc.setFillColor(primary[0], primary[1], primary[2])
   doc.rect(0, 0, pw, 42, 'F')
 
-  // ── Logo ──
-  let headerRight = pw - 14
+  // ── Logo (base64 to avoid CORS) ──
   if (profile.logo_url) {
     try {
-      const logo = await loadImage(profile.logo_url)
-      if (logo) {
+      const dataUrl = await fetchImageAsBase64(profile.logo_url)
+      if (dataUrl) {
         const maxH = 22
-        const ratio = logo.width / logo.height
-        let w = maxH * ratio
-        if (w > 50) w = 50
-        doc.addImage(logo, 'PNG', 14, 10, w, maxH)
+        // Get image dimensions from data URL
+        const img = new Image()
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = dataUrl
+        })
+        if (img.width && img.height) {
+          const ratio = img.width / img.height
+          let w = maxH * ratio
+          if (w > 50) w = 50
+          doc.addImage(dataUrl, 'PNG', 14, 10, w, maxH)
+        }
       }
-    } catch { /* skip */ }
+    } catch { /* skip logo */ }
   }
 
   // ── Company name (white on blue) ──
@@ -72,22 +95,22 @@ export async function generateInvoicePDF(
   // ── Invoice meta (right side, white) ──
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  const meta = [
-    `N° ${invoice.invoice_number}`,
-    `Date : ${new Date(invoice.issue_date).toLocaleDateString('fr-FR')}`,
-    `Échéance : ${new Date(invoice.due_date).toLocaleDateString('fr-FR')}`,
-  ]
   const statusMap: Record<string, string> = {
     draft: 'BROUILLON', sent: 'ENVOYÉE', paid: 'PAYÉE', overdue: 'EN RETARD', cancelled: 'ANNULÉE',
   }
-  meta.push(`Statut : ${statusMap[invoice.status] || invoice.status}`)
+  const meta = [
+    `N° ${invoice.invoice_number}`,
+    `Date : ${fmtDate(invoice.issue_date)}`,
+    `Échéance : ${fmtDate(invoice.due_date)}`,
+    `Statut : ${statusMap[invoice.status] || invoice.status}`,
+  ]
   let my = 38
   meta.forEach(line => {
     doc.text(line, pw - 14, my, { align: 'right' })
     my -= 4.5
   })
 
-  // ── Reset colors ──
+  // ── Reset ──
   doc.setTextColor(0, 0, 0)
   let y = 50
 
@@ -109,13 +132,12 @@ export async function generateInvoicePDF(
   if (invoice.client?.city) { doc.text(invoice.client.city, 14, y); y += 4 }
   if (invoice.client?.email) { doc.text(invoice.client.email, 14, y); y += 4 }
 
-  // ── Company info (right of client) ──
+  // ── Company info (right) ──
   let ciY = y - (invoice.client?.email ? 12 : invoice.client?.city ? 8 : 4)
   doc.setFontSize(8)
   doc.setTextColor(120, 120, 120)
   doc.setFont('helvetica', 'bold')
   doc.text('DE', pw - 14, ciY - 5, { align: 'right' })
-  ciY -= 0
   doc.setTextColor(0, 0, 0)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
@@ -138,13 +160,12 @@ export async function generateInvoicePDF(
   doc.line(14, y, pw - 14, y)
   y += 8
 
-  // ── Items table ──
-  const currencySymbol = currency === 'XOF' ? 'FCFA' : currency
+  // ── Items table (amounts WITHOUT currency to avoid overflow) ──
   const tableData = items.map(item => [
     item.description,
     item.quantity.toString(),
-    `${fmtAmount(item.unit_price)} ${currencySymbol}`,
-    `${fmtAmount(item.amount)} ${currencySymbol}`,
+    fmtAmount(item.unit_price),
+    fmtAmount(item.amount),
   ])
 
   autoTable(doc, {
@@ -170,26 +191,26 @@ export async function generateInvoicePDF(
       fillColor: [248, 250, 252],
     },
     columnStyles: {
-      0: { cellWidth: 76 },
+      0: { cellWidth: 'auto' },
       1: { cellWidth: 16, halign: 'center' },
-      2: { cellWidth: 42, halign: 'right' },
-      3: { cellWidth: 42, halign: 'right', fontStyle: 'bold' },
+      2: { cellWidth: 32, halign: 'right' },
+      3: { cellWidth: 32, halign: 'right', fontStyle: 'bold' },
     },
   })
 
   // ── Totals ──
   const finalY = (doc as any).lastAutoTable.finalY + 10
-  const totalsX = pw - 72
+  const totalsX = pw - 68
 
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(100, 100, 100)
 
   doc.text('Sous-total', totalsX, finalY)
-  doc.text(`${fmtAmount(invoice.subtotal)} ${currencySymbol}`, pw - 14, finalY, { align: 'right' })
+  doc.text(`${fmtAmount(invoice.subtotal)} ${curSymbol}`, pw - 14, finalY, { align: 'right' })
 
   doc.text(`TVA (${invoice.tax_rate}%)`, totalsX, finalY + 6)
-  doc.text(`${fmtAmount(invoice.tax_amount)} ${currencySymbol}`, pw - 14, finalY + 6, { align: 'right' })
+  doc.text(`${fmtAmount(invoice.tax_amount)} ${curSymbol}`, pw - 14, finalY + 6, { align: 'right' })
 
   // Total box
   doc.setFillColor(primary[0], primary[1], primary[2])
@@ -198,7 +219,7 @@ export async function generateInvoicePDF(
   doc.setFontSize(11)
   doc.setFont('helvetica', 'bold')
   doc.text('TOTAL', totalsX + 2, finalY + 18)
-  doc.text(`${fmtAmount(invoice.total)} ${currencySymbol}`, pw - 14, finalY + 18, { align: 'right' })
+  doc.text(`${fmtAmount(invoice.total)} ${curSymbol}`, pw - 14, finalY + 18, { align: 'right' })
 
   // ── Notes ──
   let notesY = finalY + 30
