@@ -2,7 +2,7 @@ import Link from 'next/link'
 import {
   FileText, CreditCard, Shield, Zap, CheckCircle, ArrowRight, Smartphone,
   Globe, BarChart3, Clock, Users, Send, Receipt, Lock, Star, ChevronRight,
-  Building2, TrendingUp, Mail
+  Building2, TrendingUp, Mail, Wallet, Banknote
 } from 'lucide-react'
 import { WaveLogo, OrangeMoneyLogo, FreeMoneyLogo, VisaLogo, MastercardLogo, WizallLogo } from '@/components/payment-logos'
 
@@ -172,13 +172,70 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* How payments work - direct to your account */}
+      <section className="py-20 lg:py-28 bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <span className="text-blue-400 font-semibold text-sm uppercase tracking-wider">Paiements</span>
+            <h2 className="text-3xl lg:text-4xl font-bold text-white mt-3 mb-4">Vos clients paient, l&apos;argent arrive sur votre compte</h2>
+            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+              Pas d&apos;intermédiaire, pas de délai. L&apos;argent de chaque facture atterrit directement sur votre propre compte Wave, Orange Money ou carte bancaire.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Step 1 */}
+            <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
+              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-5">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">1. Vous créez la facture</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Ajoutez vos articles, taxes et NINEA. La facture PDF est générée automatiquement avec vos informations légales.
+              </p>
+            </div>
+            {/* Step 2 */}
+            <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
+              <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center mb-5">
+                <Send className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">2. Le client reçoit le lien</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Envoyez la facture par email ou SMS. Le client clique sur le lien et voit le récapitulatif avec le bouton de paiement.
+              </p>
+            </div>
+            {/* Step 3 */}
+            <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
+              <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center mb-5">
+                <Wallet className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">3. L&apos;argent arrive sur votre compte</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Le client choisit Wave, Orange Money ou carte. L&apos;argent est transféré directement sur <strong className="text-white">votre propre compte</strong>. Pas de plateforme tierce.
+              </p>
+            </div>
+          </div>
+          {/* Key benefit */}
+          <div className="mt-12 bg-gray-800 rounded-2xl p-8 border border-gray-700 flex flex-col md:flex-row items-center gap-6">
+            <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+              <Banknote className="h-8 w-8 text-white" />
+            </div>
+            <div className="text-center md:text-left">
+              <h3 className="text-xl font-bold text-white mb-2">100% de l&apos;argent vous revient</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Contrairement aux autres plateformes, NA-Leer ne prend <strong className="text-white">aucune commission</strong> sur vos paiements. Chaque franc que vos clients paient arrive sur votre compte. Vous ne payez que l&apos;abonnement mensuel selon votre formule.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Payment methods banner */}
-      <section className="py-12 bg-gray-900">
+      <section className="py-12 bg-gray-50 border-y border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
-            <p className="text-gray-400 text-sm font-medium uppercase tracking-wider">Moyens de paiement acceptés</p>
+            <p className="text-gray-500 text-sm font-medium uppercase tracking-wider">Moyens de paiement acceptés</p>
           </div>
-          <div className="flex flex-wrap justify-center items-center gap-2">
+          <div className="flex flex-wrap justify-center items-center gap-3">
             <WaveLogo className="h-10" />
             <OrangeMoneyLogo className="h-10" />
             <FreeMoneyLogo className="h-10" />

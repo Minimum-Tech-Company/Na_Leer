@@ -9,8 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { downloadPDF } from '@/lib/pdf'
-import { Invoice, InvoiceItem, Profile, InvoiceTemplate } from '@/types'
-import { ArrowLeft, Download, Send, CreditCard, Trash2 } from 'lucide-react'
+import { Invoice, InvoiceItem, Profile, InvoiceTemplate, Payment } from '@/types'
+import { ArrowLeft, Download, Send, CreditCard, Trash2, Link2, Copy, Check, CheckCircle, CircleDollarSign, Building2, Smartphone } from 'lucide-react'
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'destructive' | 'secondary' }> = {
   draft: { label: 'Brouillon', variant: 'secondary' },
@@ -20,6 +20,23 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'succes
   cancelled: { label: 'Annulée', variant: 'secondary' },
 }
 
+const paymentMethodLabels: Record<string, string> = {
+  wave: 'Wave',
+  orange_money: 'Orange Money',
+  free_money: 'Free Money',
+  mtn_mobile_money: 'MTN Mobile Money',
+  moov_money: 'Moov Money',
+  visa: 'Visa',
+  mastercard: 'Mastercard',
+  fedapay: 'FedaPay',
+  card: 'Carte bancaire',
+  mobile_money: 'Mobile Money',
+}
+
+function getPaymentMethodLabel(method: string): string {
+  return paymentMethodLabels[method.toLowerCase()] || method
+}
+
 export default function InvoiceDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -27,8 +44,12 @@ export default function InvoiceDetailPage() {
   const [items, setItems] = useState<InvoiceItem[]>([])
   const [profile, setProfile] = useState<Profile | null>(null)
   const [template, setTemplate] = useState<InvoiceTemplate | null>(null)
+  const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(false)
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -70,10 +91,18 @@ export default function InvoiceDetailPage() {
         .eq('is_default', true)
         .single()
 
+      // Fetch payments for this invoice
+      const { data: paymentsData } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('invoice_id', invoiceData.id)
+        .order('created_at', { ascending: false })
+
       setInvoice(invoiceData)
       setItems(itemsData || [])
       setProfile(profileData)
       setTemplate(templateData)
+      setPayments(paymentsData || [])
       setLoading(false)
     }
 
@@ -94,21 +123,55 @@ export default function InvoiceDetailPage() {
       const response = await fetch('/api/invoices/' + invoice.id + '/pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create_payment', phone: '000000000' }),
+        body: JSON.stringify({ action: 'create_payment' }),
       })
 
       const data = await response.json()
-      console.log('Invoice payment response:', data)
 
       if (data.payment_url) {
-        window.location.href = data.payment_url
+        setPaymentUrl(data.payment_url)
       } else {
         alert('Erreur: ' + (data.error || 'Erreur lors de la création du paiement'))
-        setPaying(false)
       }
     } catch (error) {
       alert('Erreur lors de la connexion au service de paiement')
+    } finally {
       setPaying(false)
+    }
+  }
+
+  const handleCopyLink = async () => {
+    if (!paymentUrl) return
+    await navigator.clipboard.writeText(paymentUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleSendEmail = async () => {
+    if (!invoice || !invoice.client?.email || !paymentUrl) return
+    setSendingEmail(true)
+
+    try {
+      const response = await fetch('/api/invoices/' + invoice.id + '/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send_email',
+          payment_url: paymentUrl,
+          client_email: invoice.client.email,
+        }),
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        alert('Email envoyé avec succès à ' + invoice.client.email)
+      } else {
+        alert('Erreur: ' + (data.error || "Erreur lors de l'envoi de l'email"))
+      }
+    } catch (error) {
+      alert("Erreur lors de l'envoi de l'email")
+    } finally {
+      setSendingEmail(false)
     }
   }
 
@@ -119,6 +182,33 @@ export default function InvoiceDetailPage() {
     await supabase.from('invoice_items').delete().eq('invoice_id', invoice.id)
     await supabase.from('invoices').delete().eq('id', invoice.id)
     router.push('/invoices')
+  }
+
+  const handlePaymentValidation = async (status: 'paid' | 'unpaid') => {
+    if (!invoice) return
+    await supabase
+      .from('invoices')
+      .update({
+        payment_status: status,
+        status: status === 'paid' ? 'paid' : invoice.status === 'paid' ? 'sent' : invoice.status,
+        paid_at: status === 'paid' ? new Date().toISOString() : null,
+      })
+      .eq('id', invoice.id)
+    setInvoice({
+      ...invoice,
+      payment_status: status,
+      status: status === 'paid' ? 'paid' : invoice.status === 'paid' ? 'sent' : invoice.status,
+      paid_at: status === 'paid' ? new Date().toISOString() : null,
+    })
+  }
+
+  const handlePaymentSource = async (source: 'app' | 'offline') => {
+    if (!invoice) return
+    await supabase
+      .from('invoices')
+      .update({ payment_source: source })
+      .eq('id', invoice.id)
+    setInvoice({ ...invoice, payment_source: source })
   }
 
   if (loading) {
@@ -146,6 +236,11 @@ export default function InvoiceDetailPage() {
               <Badge variant={statusConfig[invoice.status]?.variant || 'default'}>
                 {statusConfig[invoice.status]?.label}
               </Badge>
+              {invoice.status === 'paid' && invoice.payment_method && (
+                <Badge variant="success" className="bg-green-100 text-green-800">
+                  {getPaymentMethodLabel(invoice.payment_method)}
+                </Badge>
+              )}
             </div>
             <p className="text-gray-600">
               {invoice.client?.name}
@@ -197,11 +292,27 @@ export default function InvoiceDetailPage() {
               <span className="text-gray-600">Échéance</span>
               <span>{formatDate(invoice.due_date)}</span>
             </div>
-            {invoice.paid_at && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Payée le</span>
-                <span className="text-green-600 font-medium">{formatDate(invoice.paid_at)}</span>
-              </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Statut</span>
+              <Badge variant={statusConfig[invoice.status]?.variant || 'default'}>
+                {statusConfig[invoice.status]?.label}
+              </Badge>
+            </div>
+            {invoice.status === 'paid' && invoice.paid_at && (
+              <>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Payée le</span>
+                  <span className="text-green-600 font-medium">{formatDate(invoice.paid_at)}</span>
+                </div>
+                {invoice.payment_method && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Moyen de paiement</span>
+                    <span className="font-medium text-green-600">
+                      {getPaymentMethodLabel(invoice.payment_method)}
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -277,6 +388,129 @@ export default function InvoiceDetailPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600 whitespace-pre-wrap">{invoice.notes}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Payment Link */}
+      {paymentUrl && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Link2 className="h-5 w-5" />
+              Lien de paiement
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Partagez ce lien avec votre client pour qu&apos;il puisse payer la facture.
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={paymentUrl}
+                readOnly
+                className="flex-1 h-10 px-3 rounded-lg border border-gray-300 text-sm bg-gray-50 font-mono"
+              />
+              <Button variant="outline" onClick={handleCopyLink}>
+                {copied ? (
+                  <><Check className="h-4 w-4 mr-2" /> Copié</>
+                ) : (
+                  <><Copy className="h-4 w-4 mr-2" /> Copier</>
+                )}
+              </Button>
+            </div>
+            {invoice.client?.email && (
+              <Button
+                onClick={handleSendEmail}
+                disabled={sendingEmail}
+                className="w-full"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {sendingEmail ? 'Envoi en cours...' : `Envoyer par email à ${invoice.client.email}`}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Payment Validation - For Merchant */}
+      {invoice.status !== 'draft' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <CheckCircle className="h-5 w-5" />
+              Validation du paiement
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Confirmez si le paiement a été reçu et indiquez la source pour votre comptabilité.
+            </p>
+
+            {/* Payment Status */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Statut du paiement</label>
+              <div className="flex gap-3">
+                <Button
+                  variant={invoice.payment_status === 'paid' ? 'default' : 'outline'}
+                  onClick={() => handlePaymentValidation('paid')}
+                  className={invoice.payment_status === 'paid' ? 'bg-green-600 hover:bg-green-700' : ''}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Payé
+                </Button>
+                <Button
+                  variant={invoice.payment_status === 'unpaid' ? 'default' : 'outline'}
+                  onClick={() => handlePaymentValidation('unpaid')}
+                  className={invoice.payment_status === 'unpaid' ? 'bg-red-600 hover:bg-red-700' : ''}
+                >
+                  Non payé
+                </Button>
+              </div>
+            </div>
+
+            {/* Payment Source */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Source du paiement</label>
+              <div className="flex gap-3">
+                <Button
+                  variant={invoice.payment_source === 'app' ? 'default' : 'outline'}
+                  onClick={() => handlePaymentSource('app')}
+                  className={invoice.payment_source === 'app' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                >
+                  <Smartphone className="h-4 w-4 mr-2" />
+                  Via l&apos;application
+                </Button>
+                <Button
+                  variant={invoice.payment_source === 'offline' ? 'default' : 'outline'}
+                  onClick={() => handlePaymentSource('offline')}
+                  className={invoice.payment_source === 'offline' ? 'bg-orange-600 hover:bg-orange-700' : ''}
+                >
+                  <Building2 className="h-4 w-4 mr-2" />
+                  En dehors (espèces, virement, etc.)
+                </Button>
+              </div>
+            </div>
+
+            {/* Status indicators */}
+            <div className="flex gap-4 pt-2">
+              {invoice.payment_status === 'paid' && (
+                <Badge className="bg-green-100 text-green-800">
+                  <CheckCircle className="h-3 w-3 mr-1" /> Paiement confirmé
+                </Badge>
+              )}
+              {invoice.payment_source === 'app' && (
+                <Badge className="bg-blue-100 text-blue-800">
+                  <Smartphone className="h-3 w-3 mr-1" /> Reçu via l&apos;application
+                </Badge>
+              )}
+              {invoice.payment_source === 'offline' && (
+                <Badge className="bg-orange-100 text-orange-800">
+                  <Building2 className="h-3 w-3 mr-1" /> Reçu en dehors
+                </Badge>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}

@@ -115,6 +115,13 @@ export async function generateInvoicePDF(
     cancelled: 'Annulée',
   }
   doc.text(`Statut: ${statusLabels[invoice.status] || invoice.status}`, detailsX, detailsY, { align: 'right' })
+  detailsY += 5
+
+  if (invoice.status === 'paid' && invoice.payment_method) {
+    doc.setTextColor(39, 174, 96)
+    doc.text(`Payé via: ${invoice.payment_method}`, detailsX, detailsY, { align: 'right' })
+    doc.setTextColor(0, 0, 0)
+  }
 
   // Divider line
   doc.setDrawColor(primaryRgb[0], primaryRgb[1], primaryRgb[2])

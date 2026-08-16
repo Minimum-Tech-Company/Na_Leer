@@ -354,16 +354,43 @@ export default function SettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-            <p className="font-medium mb-1">Connectez votre compte FedaPay</p>
-            <p>
-              Pour recevoir les paiements de vos factures directement sur votre compte, créez un compte{' '}
-              <a href="https://live.fedapay.com/register" target="_blank" rel="noopener noreferrer" className="underline font-medium">
-                FedaPay
-              </a>{' '}
-              et entrez vos clés API ci-dessous. Les paiements de vos clients iront directement sur votre compte Wave, Orange Money ou bancaire.
-            </p>
-          </div>
+          {!profile.fedaipay_secret_key && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+              <p className="font-medium mb-3">Guide de configuration en 3 étapes</p>
+              <ol className="space-y-3 list-decimal list-inside">
+                <li>
+                  <span className="font-medium">Créez votre compte FedaPay</span>
+                  <p className="ml-5 text-blue-700">
+                    <a href="https://live.fedapay.com/register" target="_blank" rel="noopener noreferrer" className="underline">
+                      Cliquez ici pour vous inscrire
+                    </a>{' '}
+                    sur FedaPay (gratuit). C&apos;est le service qui va recevoir l&apos;argent de vos clients.
+                  </p>
+                </li>
+                <li>
+                  <span className="font-medium">Récupérez vos clés API</span>
+                  <p className="ml-5 text-blue-700">
+                    Dans votre dashboard FedaPay, allez dans <strong>Paramètres → API</strong> et copiez votre clé publique (<code>pk_</code>) et votre clé secrète (<code>sk_</code>).
+                  </p>
+                </li>
+                <li>
+                  <span className="font-medium">Collez vos clés ici</span>
+                  <p className="ml-5 text-blue-700">
+                    Entrez vos clés dans les champs ci-dessous et passez l&apos;environnement sur <strong>Production</strong> pour recevoir de vrais paiements.
+                  </p>
+                </li>
+              </ol>
+              <p className="mt-3 text-xs text-blue-600">
+                Une fois configuré, vos clients pourront payer par Wave, Orange Money ou carte bancaire. L&apos;argent arrive directement sur votre compte.
+              </p>
+            </div>
+          )}
+
+          {profile.fedaipay_secret_key && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
+              ✓ FedaPay configuré ({profile.fedaipay_environment || 'sandbox'}) — Vous êtes prêt à recevoir des paiements !
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -408,12 +435,6 @@ export default function SettingsPage() {
               Ne partagez jamais cette clé. Elle est utilisée pour créer les paiements.
             </p>
           </div>
-
-          {profile.fedaipay_secret_key && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
-              ✓ FedaPay configuré ({profile.fedaipay_environment || 'sandbox'})
-            </div>
-          )}
         </CardContent>
       </Card>
 

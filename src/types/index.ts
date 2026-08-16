@@ -39,11 +39,15 @@ export interface Invoice {
   notes: string | null
   currency: string
   dexchange_payment_id: string | null
+  payment_method: string | null
+  payment_status: 'unpaid' | 'partial' | 'paid'
+  payment_source: 'app' | 'offline' | null
   paid_at: string | null
   created_at: string
   updated_at: string
   client?: Client
   items?: InvoiceItem[]
+  payments?: Payment[]
 }
 
 export interface Client {
@@ -75,6 +79,7 @@ export interface Profile {
   pays: string | null
   logo_url: string | null
   currency: string
+  is_admin: boolean
   fedaipay_api_key: string | null
   fedaipay_secret_key: string | null
   fedaipay_environment: string | null

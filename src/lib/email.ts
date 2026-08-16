@@ -19,7 +19,7 @@ export async function sendInvoiceEmail({
 }) {
   try {
     await resend.emails.send({
-      from: `${companyName} <noreply@${process.env.RESEND_DOMAIN || 'na-leer.com'}>`,
+      from: `${companyName} <noreply@${process.env.RESEND_DOMAIN || 'na-leer.org'}>`,
       to,
       subject: `Facture ${invoiceNumber} - ${companyName}`,
       html: `
@@ -31,7 +31,7 @@ export async function sendInvoiceEmail({
         </head>
         <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background-color: #2980b9; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-            <h1 style="margin: 0; font-size: 24px;">FacturaFlow</h1>
+            <h1 style="margin: 0; font-size: 24px;">NA-Leer</h1>
           </div>
           <div style="background-color: #f8f9fa; padding: 30px; border: 1px solid #e9ecef;">
             <h2 style="color: #333;">Nouvelle facture</h2>
@@ -61,12 +61,12 @@ export async function sendInvoiceEmail({
               </a>
             </div>
 
-            <p style="color: #666; font-size: 12px;">
+              <p style="color: #666; font-size: 12px;">
               Vous pouvez payer par Wave, Orange Money ou carte bancaire.
             </p>
           </div>
           <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-            <p>Cet email a été envoyé par FacturaFlow</p>
+            <p>Cet email a été envoyé par NA-Leer</p>
           </div>
         </body>
         </html>
@@ -94,7 +94,7 @@ export async function sendPaymentReminder({
 }) {
   try {
     await resend.emails.send({
-      from: `${companyName} <noreply@${process.env.RESEND_DOMAIN || 'na-leer.com'}>`,
+      from: `${companyName} <noreply@${process.env.RESEND_DOMAIN || 'na-leer.org'}>`,
       to,
       subject: `Rappel - Facture ${invoiceNumber} en attente de paiement`,
       html: `

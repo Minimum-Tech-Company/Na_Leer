@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createTransaction, getTransactionToken, FedaPayConfig } from '@/lib/fedapay'
+import { sendInvoiceEmail } from '@/lib/email'
 
 export async function POST(
   request: NextRequest,
@@ -68,6 +69,49 @@ export async function POST(
         payment_url: tokenData.url,
         reference: transaction.reference,
       })
+    }
+
+    if (body.action === 'send_email') {
+      const { payment_url, client_email } = body
+
+      if (!payment_url || !client_email) {
+        return NextResponse.json(
+          { error: 'Lien de paiement et email du client requis' },
+          { status: 400 }
+        )
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_name')
+        .eq('id', invoice.user_id)
+        .single()
+
+      const companyName = profile?.company_name || 'Votre entreprise'
+
+      const result = await sendInvoiceEmail({
+        to: client_email,
+        invoiceNumber: invoice.invoice_number,
+        amount: `${invoice.total} ${invoice.currency || 'XOF'}`,
+        dueDate: invoice.due_date,
+        paymentUrl: payment_url,
+        companyName,
+      })
+
+      if (result.success) {
+        // Update invoice status to sent
+        await supabase
+          .from('invoices')
+          .update({ status: 'sent' })
+          .eq('id', id)
+
+        return NextResponse.json({ success: true })
+      } else {
+        return NextResponse.json(
+          { error: "Erreur lors de l'envoi de l'email" },
+          { status: 500 }
+        )
+      }
     }
 
     return NextResponse.json({ error: 'Action inconnue' }, { status: 400 })

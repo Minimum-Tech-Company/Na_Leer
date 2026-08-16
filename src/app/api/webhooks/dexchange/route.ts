@@ -4,28 +4,35 @@ import { verifyWebhookSignature } from '@/lib/dexchange'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { type, data } = body
+    const rawBody = await request.text()
+    const body = JSON.parse(rawBody)
+    const { event, data } = body
 
     const signature = request.headers.get('x-dexchange-signature') || ''
-    const rawBody = JSON.stringify(body)
 
     const secret = process.env.DEXCHANGE_WEBHOOK_SECRET
-    if (secret && secret !== 'your_dexchange_webhook_secret') {
+    if (secret) {
       if (!verifyWebhookSignature(rawBody, signature)) {
+        console.error('Invalid Dexchange webhook signature')
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
       }
     }
 
     const supabase = await createClient()
 
-    if (type === 'checkout.completed') {
-      const reference = data?.reference || data?.metadata?.reference
+    if (event === 'checkout.completed') {
+      const reference = data?.reference || ''
+      const metadata = data?.metadata || {}
 
-      if (reference && reference.startsWith('SUB-')) {
-        const parts = reference.split('-')
-        const userId = parts[1]
-        const planId = parts[2]
+      // Handle subscription payments
+      if (metadata.type === 'subscription' || reference.startsWith('SUB-')) {
+        const userId = metadata.user_id
+        const planId = metadata.plan_id
+
+        if (!userId || !planId) {
+          console.error('Missing user_id or plan_id in subscription metadata')
+          return NextResponse.json({ received: true })
+        }
 
         const expiresAt = new Date()
         expiresAt.setMonth(expiresAt.getMonth() + 1)
@@ -36,48 +43,61 @@ export async function POST(request: NextRequest) {
           status: 'active',
           started_at: new Date().toISOString(),
           expires_at: expiresAt.toISOString(),
-          dexchange_transaction_id: data?.id || reference,
+          dexchange_transaction_id: data?.transaction_id || reference,
         })
-      } else if (reference && reference.startsWith('INV-')) {
-        const invoiceId = reference.split('-')[1]
 
-        await supabase
-          .from('invoices')
-          .update({
-            status: 'paid',
-            paid_at: new Date().toISOString(),
-            dexchange_payment_id: data?.id || reference,
-          })
-          .eq('id', invoiceId)
+        console.log(`Subscription created for user ${userId}, plan ${planId}`)
+      }
+      // Handle invoice payments
+      else if (metadata.type === 'invoice' || reference.startsWith('INV-')) {
+        const invoiceId = metadata.invoice_id
 
-        const { data: invoice } = await supabase
-          .from('invoices')
-          .select('user_id, total, currency')
-          .eq('id', invoiceId)
-          .single()
+        if (invoiceId) {
+          await supabase
+            .from('invoices')
+            .update({
+              status: 'paid',
+              paid_at: new Date().toISOString(),
+              dexchange_payment_id: data?.transaction_id || reference,
+              payment_method: data?.operator || 'dexchange',
+            })
+            .eq('id', invoiceId)
 
-        if (invoice) {
-          await supabase.from('payments').insert({
-            invoice_id: invoiceId,
-            user_id: invoice.user_id,
-            amount: invoice.total,
-            currency: invoice.currency,
-            method: 'dexchange',
-            status: 'completed',
-            dexchange_transaction_id: data?.id || reference,
-            metadata: body,
-          })
+          const { data: invoice } = await supabase
+            .from('invoices')
+            .select('user_id, total, currency')
+            .eq('id', invoiceId)
+            .single()
+
+          if (invoice) {
+            await supabase.from('payments').insert({
+              invoice_id: invoiceId,
+              user_id: invoice.user_id,
+              amount: invoice.total,
+              currency: invoice.currency,
+              method: data?.operator || 'dexchange',
+              status: 'completed',
+              dexchange_transaction_id: data?.transaction_id || reference,
+              metadata: metadata,
+            })
+          }
+
+          console.log(`Invoice ${invoiceId} marked as paid`)
         }
       }
-    } else if (type === 'checkout.failed') {
-      const reference = data?.reference || data?.metadata?.reference
+    } else if (event === 'checkout.failed') {
+      const reference = data?.reference || ''
+      const metadata = data?.metadata || {}
 
-      if (reference && reference.startsWith('INV-')) {
-        const invoiceId = reference.split('-')[1]
-        await supabase
-          .from('invoices')
-          .update({ status: 'overdue' })
-          .eq('id', invoiceId)
+      if (metadata.type === 'invoice' || reference.startsWith('INV-')) {
+        const invoiceId = metadata.invoice_id
+        if (invoiceId) {
+          await supabase
+            .from('invoices')
+            .update({ status: 'overdue' })
+            .eq('id', invoiceId)
+          console.log(`Invoice ${invoiceId} marked as overdue`)
+        }
       }
     }
 
