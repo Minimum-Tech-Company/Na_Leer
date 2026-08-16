@@ -32,7 +32,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left - Branding */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -73,17 +73,17 @@ export default function LoginPage() {
       </div>
 
       {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-gray-50">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-gray-50">
         <div className="w-full max-w-md">
-          <div className="mb-10">
-            <Link href="/" className="flex items-center gap-2 mb-10">
-              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center lg:hidden">
+          <div className="mb-8 lg:mb-10">
+            <Link href="/" className="flex items-center gap-2 mb-6 lg:hidden">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
                 <FileText className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900 lg:hidden">NA-Leer</span>
+              <span className="text-xl font-bold text-gray-900">NA-Leer</span>
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Bon retour !</h1>
-            <p className="text-gray-500">Connectez-vous pour accéder à votre espace</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Bon retour !</h1>
+            <p className="text-gray-500 text-sm sm:text-base">Connectez-vous pour accéder à votre espace</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
@@ -158,7 +158,7 @@ export default function LoginPage() {
             </div>
           </form>
 
-          <div className="mt-8 text-center">
+          <div className="mt-6 sm:mt-8 text-center">
             <p className="text-sm text-gray-500">
               Pas encore de compte ?{' '}
               <Link href="/register" className="text-blue-600 hover:text-blue-700 font-semibold">
@@ -167,15 +167,15 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="mt-12 pt-8 border-t border-gray-200 text-center">
+          <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-200 text-center">
             <p className="text-xs text-gray-400">
               En vous connectant, vous acceptez nos conditions d&apos;utilisation
             </p>
           </div>
+          <div className="text-center text-xs text-gray-400 mt-4 pb-4">
+            by Minimum Tech Company
+          </div>
         </div>
-      </div>
-      <div className="text-center text-xs text-gray-400 mt-6">
-        by Minimum Tech Company
       </div>
     </div>
   )

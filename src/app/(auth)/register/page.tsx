@@ -156,7 +156,7 @@ export default function RegisterPage() {
   const stepLabels = ['Votre compte', 'Votre entreprise', 'Coordonnées']
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left - Branding */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -196,24 +196,25 @@ export default function RegisterPage() {
       </div>
 
       {/* Right - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-gray-50">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-gray-50">
         <div className="w-full max-w-lg">
-          <div className="mb-8">
-            <Link href="/" className="flex items-center gap-2 mb-8">
-              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center lg:hidden">
+          <div className="mb-6 sm:mb-8">
+            <Link href="/" className="flex items-center gap-2 mb-6 lg:hidden">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
                 <FileText className="h-5 w-5 text-white" />
               </div>
+              <span className="text-lg font-bold text-gray-900">NA-Leer</span>
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Créer un compte</h1>
-            <p className="text-gray-500">Configurez votre entreprise en quelques étapes</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Créer un compte</h1>
+            <p className="text-gray-500 text-sm sm:text-base">Configurez votre entreprise en quelques étapes</p>
           </div>
 
           {/* Progress */}
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-3">
+          <div className="mb-6 sm:mb-8">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3">
               {[1, 2, 3].map((s) => (
                 <div key={s} className="flex items-center flex-1">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-all duration-300 ${
+                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0 transition-all duration-300 ${
                     step > s ? 'bg-green-500 text-white scale-90' : step === s ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 scale-110' : 'bg-gray-200 text-gray-400'
                   }`}>
                     {step > s ? <Check className="h-4 w-4" /> : s}
@@ -222,7 +223,7 @@ export default function RegisterPage() {
                 </div>
               ))}
             </div>
-            <div className="flex gap-4 text-xs">
+            <div className="flex gap-2 sm:gap-4 text-[10px] sm:text-xs">
               {stepLabels.map((label, i) => (
                 <span key={label} className={`flex-1 text-center ${step === i + 1 ? 'text-blue-600 font-semibold' : 'text-gray-400'}`}>
                   {label}
@@ -291,7 +292,7 @@ export default function RegisterPage() {
                   <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Ex: Diallo & Fils SARL" className="pl-11 h-12 rounded-xl border-gray-200" required />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Forme juridique</label>
                   <select value={formeJuridique} onChange={(e) => setFormeJuridique(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
@@ -355,7 +356,7 @@ export default function RegisterPage() {
                   <Input value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} placeholder="123 Avenue de l'Indépendance" className="pl-11 h-12 rounded-xl border-gray-200" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Ville *</label>
                   <select value={ville} onChange={(e) => setVille(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
@@ -370,7 +371,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Téléphone *
@@ -405,7 +406,7 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <div className="mt-8 text-center">
+          <div className="mt-6 sm:mt-8 text-center pb-4">
             <p className="text-sm text-gray-500">
               Déjà un compte ?{' '}
               <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold">
@@ -413,10 +414,10 @@ export default function RegisterPage() {
               </Link>
             </p>
           </div>
+          <div className="text-center text-xs text-gray-400 pb-4">
+            by Minimum Tech Company
+          </div>
         </div>
-      </div>
-      <div className="text-center text-xs text-gray-400 mt-6">
-        by Minimum Tech Company
       </div>
     </div>
   )
