@@ -148,27 +148,27 @@ export default function InvoiceDetailPage() {
   }
 
   const handleSendEmail = async () => {
-    if (!invoice || !invoice.client?.email || !paymentUrl) return
+    if (!invoice || !invoice.client?.email) return
     setSendingEmail(true)
 
     try {
-      const response = await fetch('/api/invoices/' + invoice.id + '/pdf', {
+      const response = await fetch('/api/invoices/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'send_email',
-          payment_url: paymentUrl,
-          client_email: invoice.client.email,
+          invoice_id: invoice.id,
+          payment_url: paymentUrl || undefined,
         }),
       })
 
       const data = await response.json()
       if (data.success) {
         alert('Email envoyé avec succès à ' + invoice.client.email)
+        setInvoice({ ...invoice, status: 'sent' })
       } else {
         alert('Erreur: ' + (data.error || "Erreur lors de l'envoi de l'email"))
       }
-    } catch (error) {
+    } catch {
       alert("Erreur lors de l'envoi de l'email")
     } finally {
       setSendingEmail(false)
@@ -186,19 +186,38 @@ export default function InvoiceDetailPage() {
 
   const handlePaymentValidation = async (status: 'paid' | 'unpaid') => {
     if (!invoice) return
+
+    const newStatus = status === 'paid' ? 'paid' : invoice.status === 'paid' ? 'sent' : invoice.status
+    const paidAt = status === 'paid' ? new Date().toISOString() : null
+
     await supabase
       .from('invoices')
       .update({
         payment_status: status,
-        status: status === 'paid' ? 'paid' : invoice.status === 'paid' ? 'sent' : invoice.status,
-        paid_at: status === 'paid' ? new Date().toISOString() : null,
+        status: newStatus,
+        paid_at: paidAt,
       })
       .eq('id', invoice.id)
+
+    if (status === 'paid') {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase.from('payments').insert({
+          invoice_id: invoice.id,
+          user_id: user.id,
+          amount: invoice.total,
+          currency: invoice.currency || 'XOF',
+          method: invoice.payment_method || 'offline',
+          status: 'completed',
+        })
+      }
+    }
+
     setInvoice({
       ...invoice,
       payment_status: status,
-      status: status === 'paid' ? 'paid' : invoice.status === 'paid' ? 'sent' : invoice.status,
-      paid_at: status === 'paid' ? new Date().toISOString() : null,
+      status: newStatus,
+      paid_at: paidAt,
     })
   }
 
@@ -253,12 +272,13 @@ export default function InvoiceDetailPage() {
             PDF
           </Button>
           {invoice.status === 'draft' && (
-            <Button onClick={async () => {
-              await supabase.from('invoices').update({ status: 'sent' }).eq('id', invoice.id)
-              setInvoice({ ...invoice, status: 'sent' })
-            }}>
+            <Button
+              onClick={handleSendEmail}
+              disabled={sendingEmail || !invoice.client?.email}
+              title={!invoice.client?.email ? 'Ajoutez un email au client pour envoyer' : ''}
+            >
               <Send className="h-4 w-4 mr-2" />
-              Envoyer
+              {sendingEmail ? 'Envoi...' : 'Envoyer par email'}
             </Button>
           )}
           {(invoice.status === 'sent' || invoice.status === 'overdue') && (
@@ -430,6 +450,22 @@ export default function InvoiceDetailPage() {
                 {sendingEmail ? 'Envoi en cours...' : `Envoyer par email à ${invoice.client.email}`}
               </Button>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Send email section */}
+      {(invoice.status === 'sent' || invoice.status === 'overdue') && invoice.client?.email && !paymentUrl && (
+        <Card>
+          <CardContent className="pt-6">
+            <Button
+              onClick={handleSendEmail}
+              disabled={sendingEmail}
+              className="w-full"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {sendingEmail ? 'Envoi en cours...' : `Renvoyer la facture par email à ${invoice.client.email}`}
+            </Button>
           </CardContent>
         </Card>
       )}

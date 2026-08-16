@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select } from '@/components/ui/select'
 import { generateInvoiceNumber, formatCurrency } from '@/lib/utils'
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { Client, InvoiceItem } from '@/types'
 import { canCreateInvoice } from '@/lib/subscription'
@@ -26,6 +26,7 @@ export default function NewInvoicePage() {
     { description: '', quantity: 1, unit_price: 0, amount: 0 },
   ])
   const [loading, setLoading] = useState(false)
+  const [sendEmail, setSendEmail] = useState(false)
   const [planLimit, setPlanLimit] = useState<{ allowed: boolean; reason?: string; current: number; max: number } | null>(null)
   const router = useRouter()
   const supabase = createClient()
@@ -136,6 +137,21 @@ export default function NewInvoicePage() {
     }))
 
     await supabase.from('invoice_items').insert(invoiceItems)
+
+    if (sendEmail && status === 'sent') {
+      const selectedClient = clients.find(c => c.id === clientId)
+      if (selectedClient?.email) {
+        try {
+          await fetch('/api/invoices/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invoice_id: invoice.id }),
+          })
+        } catch {
+          // Email failed, but invoice was created — don't block the user
+        }
+      }
+    }
 
     router.push(`/invoices/${invoice.id}`)
   }
@@ -336,6 +352,35 @@ export default function NewInvoicePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Email option */}
+      {(() => {
+        const selectedClient = clients.find(c => c.id === clientId)
+        if (!selectedClient?.email) return null
+        return (
+          <Card>
+            <CardContent className="pt-6">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sendEmail}
+                  onChange={(e) => setSendEmail(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-gray-500" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Envoyer la facture par email</p>
+                    <p className="text-xs text-gray-500">
+                      Un email sera envoyé à {selectedClient.email} avec le lien de paiement
+                    </p>
+                  </div>
+                </div>
+              </label>
+            </CardContent>
+          </Card>
+        )
+      })()}
 
       {/* Actions */}
       <div className="flex justify-end gap-3">
