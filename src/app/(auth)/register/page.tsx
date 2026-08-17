@@ -291,7 +291,7 @@ export default function RegisterPage() {
                 </label>
                 <div className="relative">
                   <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Ex: Diallo & Fils SARL" className="pl-11 h-12 rounded-xl border-gray-200" required />
+                  <Input value={companyName} onChange={(e) => setCompanyName(e.target.value.toUpperCase())} placeholder="Ex: DIALLO & FILS SARL" className="pl-11 h-12 rounded-xl border-gray-200" required />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

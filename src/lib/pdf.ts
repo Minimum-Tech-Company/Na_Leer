@@ -98,7 +98,7 @@ export async function generateInvoicePDF(
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text(profile.company_name || 'Votre Entreprise', 14, 38)
+  doc.text((profile.company_name || 'Votre Entreprise').toUpperCase(), 14, 38)
 
   // ── "FACTURE" title ──
   doc.setFontSize(28)
@@ -154,7 +154,7 @@ export async function generateInvoicePDF(
   doc.setTextColor(0, 0, 0)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
-  doc.text(profile.company_name || '', pw - 14, ciY, { align: 'right' })
+  doc.text((profile.company_name || '').toUpperCase(), pw - 14, ciY, { align: 'right' })
   ciY += 4
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8)

@@ -154,7 +154,7 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Raison sociale / Nom de l'entreprise *</label>
-            <Input value={profile.company_name || ''} onChange={(e) => setProfile({ ...profile, company_name: e.target.value })} placeholder="Ex: Diallo & Fils SARL" className="rounded-xl" />
+            <Input value={profile.company_name || ''} onChange={(e) => setProfile({ ...profile, company_name: e.target.value.toUpperCase() })} placeholder="Ex: DIALLO & FILS SARL" className="rounded-xl" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
