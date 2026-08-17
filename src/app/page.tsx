@@ -515,7 +515,7 @@ export default function LandingPage() {
             <div>
               <h4 className="text-white font-semibold mb-4">Entreprise</h4>
               <ul className="space-y-2 text-gray-400 text-sm">
-                <li><span>Support: support@na-leer.com</span></li>
+                <li><span>Support: support@na-leer.org</span></li>
                 <li><span>Dakar, Sénégal</span></li>
               </ul>
             </div>
