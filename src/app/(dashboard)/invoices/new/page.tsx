@@ -12,6 +12,7 @@ import { ArrowLeft, Plus, Trash2, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { Client, InvoiceItem } from '@/types'
 import { canCreateInvoice } from '@/lib/subscription'
+import { logActivity } from '@/lib/activity'
 
 export default function NewInvoicePage() {
   const [clients, setClients] = useState<Client[]>([])
@@ -89,6 +90,8 @@ export default function NewInvoicePage() {
     if (invoiceError || !invoice) { alert('Erreur lors de la création'); setLoading(false); return }
 
     await supabase.from('invoice_items').insert(items.map(item => ({ invoice_id: invoice.id, description: item.description, quantity: item.quantity, unit_price: item.unit_price, amount: item.amount })))
+
+    await logActivity('created', 'invoice', invoice.id, invoiceNumber, { total, status })
 
     if (sendEmail && status === 'sent') {
       const selectedClient = clients.find(c => c.id === clientId)

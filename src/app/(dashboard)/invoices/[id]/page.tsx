@@ -11,6 +11,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { downloadPDF } from '@/lib/pdf'
 import { Invoice, InvoiceItem, Profile, InvoiceTemplate, Payment } from '@/types'
 import { ArrowLeft, Download, Send, CreditCard, Trash2, Link2, Copy, Check, CheckCircle, CircleDollarSign, Building2, Smartphone } from 'lucide-react'
+import { logActivity } from '@/lib/activity'
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'destructive' | 'secondary'; color: string }> = {
   draft: { label: 'Brouillon', variant: 'secondary', color: 'bg-gray-100 text-gray-700' },
@@ -104,7 +105,7 @@ export default function InvoiceDetailPage() {
         body: JSON.stringify({ invoice_id: invoice.id, payment_url: paymentUrl || undefined }),
       })
       const data = await response.json()
-      if (data.success) { alert('Email envoyé avec succès à ' + invoice.client.email); setInvoice({ ...invoice, status: 'sent' }) }
+      if (data.success) { alert('Email envoyé avec succès à ' + invoice.client.email); setInvoice({ ...invoice, status: 'sent' }); await logActivity('sent', 'invoice', invoice.id, invoice.invoice_number) }
       else alert('Erreur: ' + (data.error || "Erreur lors de l'envoi de l'email"))
     } catch { alert("Erreur lors de l'envoi de l'email") }
     finally { setSendingEmail(false) }
@@ -112,6 +113,7 @@ export default function InvoiceDetailPage() {
 
   const handleDelete = async () => {
     if (!invoice || !confirm('Êtes-vous sûr de vouloir supprimer cette facture ?')) return
+    await logActivity('deleted', 'invoice', invoice.id, invoice.invoice_number)
     await supabase.from('invoice_items').delete().eq('invoice_id', invoice.id)
     await supabase.from('invoices').delete().eq('id', invoice.id)
     router.push('/invoices')
@@ -125,6 +127,9 @@ export default function InvoiceDetailPage() {
     if (status === 'paid') {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) await supabase.from('payments').insert({ invoice_id: invoice.id, user_id: user.id, amount: invoice.total, currency: invoice.currency || 'XOF', method: invoice.payment_method || 'offline', status: 'completed' })
+      await logActivity('paid', 'invoice', invoice.id, invoice.invoice_number, { amount: invoice.total })
+    } else {
+      await logActivity('status_changed', 'invoice', invoice.id, invoice.invoice_number, { new_status: newStatus })
     }
     setInvoice({ ...invoice, payment_status: status, status: newStatus, paid_at: paidAt })
   }

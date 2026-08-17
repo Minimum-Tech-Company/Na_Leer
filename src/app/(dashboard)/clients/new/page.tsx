@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft } from 'lucide-react'
 import { canCreateClient } from '@/lib/subscription'
+import { logActivity } from '@/lib/activity'
 
 export default function NewClientPage() {
   const [name, setName] = useState('')
@@ -72,6 +73,7 @@ export default function NewClientPage() {
       }
 
       console.log('Client created:', data)
+      if (data?.[0]) await logActivity('created', 'client', data[0].id, name)
       router.push('/clients')
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)

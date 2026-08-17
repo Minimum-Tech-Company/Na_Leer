@@ -21,6 +21,7 @@ import {
   Headphones,
   Palette,
   Shield,
+  History,
 } from 'lucide-react'
 import { Profile, Plan } from '@/types'
 
@@ -35,6 +36,7 @@ const navigation = [
 
 const businessNavigation = [
   { name: 'Équipe', href: '/team', icon: UserCog },
+  { name: 'Journal d\'activité', href: '/activity', icon: History },
   { name: 'API & Intégrations', href: '/api-docs', icon: Key },
   { name: 'Templates', href: '/templates', icon: Palette },
   { name: 'Support', href: '/support', icon: Headphones },

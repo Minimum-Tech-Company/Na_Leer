@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { ArrowLeft, Trash2, Mail, Phone, MapPin } from 'lucide-react'
 import { Client, Invoice } from '@/types'
+import { logActivity } from '@/lib/activity'
 
 export default function ClientDetailPage() {
   const params = useParams()
@@ -61,6 +62,7 @@ export default function ClientDetailPage() {
       .eq('id', params.id)
 
     if (!error) {
+      if (client) await logActivity('updated', 'client', client.id, formData.name)
       setClient(formData as Client)
       setEditing(false)
     }
@@ -68,6 +70,7 @@ export default function ClientDetailPage() {
 
   const handleDelete = async () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce client ?')) return
+    if (client) await logActivity('deleted', 'client', client.id, client.name)
     await supabase.from('clients').delete().eq('id', params.id)
     router.push('/clients')
   }

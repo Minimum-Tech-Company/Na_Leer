@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { TeamMember, Invitation, Plan } from '@/types'
 import { Users, Mail, Trash2, Plus, Crown, Shield, UserMinus } from 'lucide-react'
+import { logActivity } from '@/lib/activity'
 
 export default function TeamPage() {
   const [members, setMembers] = useState<TeamMember[]>([])
@@ -67,6 +68,7 @@ export default function TeamPage() {
       setError(data.error)
     } else {
       setSuccess(`Invitation envoyée à ${email}`)
+      await logActivity('invited', 'team', undefined, email, { role })
       setEmail('')
       fetchData()
     }
@@ -76,7 +78,8 @@ export default function TeamPage() {
 
   const handleRemove = async (id: string) => {
     if (!confirm('Supprimer ce membre ?')) return
-
+    const member = members.find(m => m.id === id)
+    await logActivity('removed', 'team', id, member?.user?.email || 'membre')
     const res = await fetch(`/api/team/${id}`, { method: 'DELETE' })
     if (res.ok) fetchData()
   }
