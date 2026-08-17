@@ -70,12 +70,13 @@ export default function RegisterPage() {
       if (!fullName.trim()) { setError('Le nom complet est requis'); return false }
       if (!email.trim() || !email.includes('@')) { setError('Email invalide'); return false }
       if (password.length < 6) { setError('Le mot de passe doit faire au moins 6 caractères'); return false }
+      if (!/[A-Z]/.test(password)) { setError('Le mot de passe doit contenir au moins une lettre majuscule'); return false }
+      if (!/[a-z]/.test(password)) { setError('Le mot de passe doit contenir au moins une lettre minuscule'); return false }
+      if (!/[^A-Za-z0-9]/.test(password)) { setError('Le mot de passe doit contenir au moins un caractère spécial (!@#$%^&*...)'); return false }
       return true
     }
     if (step === 2) {
       if (!companyName.trim()) { setError('Le nom de l\'entreprise est requis'); return false }
-      if (!ninea.trim()) { setError('Le NINEA est requis'); return false }
-      if (ninea.replace(/\s/g, '').length < 9) { setError('Le NINEA doit contenir au moins 9 caractères'); return false }
       return true
     }
     return true
@@ -108,7 +109,7 @@ export default function RegisterPage() {
             full_name: fullName,
             company_name: companyName,
             forme_juridique: formeJuridique,
-            tax_id: ninea.replace(/\s/g, ''),
+            tax_id: ninea.trim() ? ninea.replace(/\s/g, '') : null,
             rccm: rccm || null,
             company_address: companyAddress,
             ville, pays,
@@ -273,6 +274,7 @@ export default function RegisterPage() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                <p className="text-xs text-gray-400 mt-1">Min. 6 caractères, 1 majuscule, 1 minuscule, 1 caractère spécial</p>
               </div>
               <Button onClick={handleNext} className="w-full h-12 rounded-xl text-base font-semibold shadow-lg shadow-blue-200" type="button">
                 Continuer <ArrowRight className="h-4 w-4 ml-2" />
@@ -301,18 +303,19 @@ export default function RegisterPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    NINEA *
+                    NINEA
                   </label>
                   <div className="relative">
                     <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input value={ninea} onChange={(e) => setNinea(e.target.value)} placeholder="012345678" maxLength={13} className="pl-11 h-12 rounded-xl border-gray-200" required />
+                    <Input value={ninea} onChange={(e) => setNinea(e.target.value)} placeholder="012345678" maxLength={13} className="pl-11 h-12 rounded-xl border-gray-200" />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Numéro d&apos;identification fiscale</p>
+                  <p className="text-xs text-gray-400 mt-1">Optionnel — Numéro d&apos;identification fiscale</p>
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">RCCM (Registre du Commerce)</label>
                 <Input value={rccm} onChange={(e) => setRccm(e.target.value)} placeholder="SN/DKR/2024/B/1234" className="h-12 rounded-xl border-gray-200" />
+                <p className="text-xs text-gray-400 mt-1">Optionnel</p>
               </div>
 
               {/* Logo */}
