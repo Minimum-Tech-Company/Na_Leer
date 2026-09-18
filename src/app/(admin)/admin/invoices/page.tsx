@@ -1,11 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Invoice } from '@/types'
 import { Search, Receipt, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -19,31 +17,23 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'succes
 }
 
 export default function AdminInvoicesPage() {
-  const [invoices, setInvoices] = useState<(Invoice & { profiles?: { full_name: string; email: string } })[]>([])
+  const [invoices, setInvoices] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const supabase = createClient()
 
   useEffect(() => {
-    fetchInvoices()
-  }, [supabase])
-
-  const fetchInvoices = async () => {
-    const { data } = await supabase
-      .from('invoices')
-      .select('*, profiles:user_id(full_name, email)')
-      .order('created_at', { ascending: false })
-      .limit(100)
-
-    setInvoices(data || [])
-    setLoading(false)
-  }
+    fetch('/api/admin/invoices')
+      .then(r => r.json())
+      .then(data => { setInvoices(data.invoices || []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
 
   const filtered = search
     ? invoices.filter(i =>
         i.invoice_number?.toLowerCase().includes(search.toLowerCase()) ||
-        (i as any).profiles?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-        (i as any).profiles?.email?.toLowerCase().includes(search.toLowerCase())
+        i.user?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+        i.user?.email?.toLowerCase().includes(search.toLowerCase()) ||
+        i.client?.name?.toLowerCase().includes(search.toLowerCase())
       )
     : invoices
 
@@ -67,7 +57,7 @@ export default function AdminInvoicesPage() {
       </div>
 
       <div className="space-y-3">
-        {filtered.map((invoice) => (
+        {filtered.map((invoice: any) => (
           <Card key={invoice.id}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -83,18 +73,15 @@ export default function AdminInvoicesPage() {
                       </Badge>
                     </div>
                     <p className="text-sm text-gray-500">
-                      {(invoice as any).profiles?.full_name || 'N/A'} — {(invoice as any).profiles?.email || ''}
+                      {invoice.user?.full_name || 'N/A'} — {invoice.user?.email || ''}
                     </p>
                     <p className="text-xs text-gray-400">
-                      {formatDate(invoice.issue_date)} • {invoice.client?.name || 'Client inconnu'}
+                      {formatDate(invoice.created_at)} • {invoice.client?.name || 'Client inconnu'}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-lg">{formatCurrency(invoice.total, invoice.currency)}</p>
-                  <Link href={`/invoices/${invoice.id}`} className="text-blue-600 hover:underline text-sm flex items-center gap-1 justify-end">
-                    Voir <ExternalLink className="h-3 w-3" />
-                  </Link>
+                  <p className="font-bold text-lg">{formatCurrency(invoice.total)}</p>
                 </div>
               </div>
             </CardContent>

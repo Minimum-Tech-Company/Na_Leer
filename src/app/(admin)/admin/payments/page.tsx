@@ -1,11 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Payment } from '@/types'
 import { Search, CreditCard } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
@@ -17,30 +15,23 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'succes
 }
 
 export default function AdminPaymentsPage() {
-  const [payments, setPayments] = useState<Payment[]>([])
+  const [payments, setPayments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const supabase = createClient()
 
   useEffect(() => {
-    fetchPayments()
-  }, [supabase])
-
-  const fetchPayments = async () => {
-    const { data } = await supabase
-      .from('payments')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100)
-
-    setPayments(data || [])
-    setLoading(false)
-  }
+    fetch('/api/admin/payments')
+      .then(r => r.json())
+      .then(data => { setPayments(data.payments || []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
 
   const filtered = search
     ? payments.filter(p =>
         p.method?.toLowerCase().includes(search.toLowerCase()) ||
-        p.invoice_id?.toLowerCase().includes(search.toLowerCase())
+        p.user?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+        p.user?.email?.toLowerCase().includes(search.toLowerCase()) ||
+        p.invoice?.invoice_number?.toLowerCase().includes(search.toLowerCase())
       )
     : payments
 
@@ -56,7 +47,7 @@ export default function AdminPaymentsPage() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
-          placeholder="Rechercher par méthode ou facture..."
+          placeholder="Rechercher par méthode, utilisateur ou facture..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-10"
@@ -64,7 +55,7 @@ export default function AdminPaymentsPage() {
       </div>
 
       <div className="space-y-3">
-        {filtered.map((payment) => (
+        {filtered.map((payment: any) => (
           <Card key={payment.id}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -77,10 +68,13 @@ export default function AdminPaymentsPage() {
                       <Badge variant={statusConfig[payment.status]?.variant || 'default'}>
                         {statusConfig[payment.status]?.label}
                       </Badge>
-                      <span className="text-sm text-gray-500">{payment.method}</span>
+                      <span className="text-sm text-gray-500">{payment.method || 'N/A'}</span>
                     </div>
+                    <p className="text-sm text-gray-500">
+                      {payment.user?.full_name || payment.user?.email || 'N/A'}
+                    </p>
                     <p className="text-xs text-gray-400">
-                      Facture: {payment.invoice_id} • {formatDate(payment.created_at)}
+                      {payment.invoice?.invoice_number || 'N/A'} • {formatDate(payment.created_at)}
                     </p>
                   </div>
                 </div>

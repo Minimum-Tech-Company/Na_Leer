@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Profile } from '@/types'
@@ -14,11 +13,10 @@ export default function AdminUsersPage() {
   const [filteredUsers, setFilteredUsers] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const supabase = createClient()
 
   useEffect(() => {
     fetchUsers()
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     if (search) {
@@ -33,29 +31,29 @@ export default function AdminUsersPage() {
   }, [search, users])
 
   const fetchUsers = async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    setUsers(data || [])
-    setFilteredUsers(data || [])
+    const res = await fetch('/api/admin/users')
+    const data = await res.json()
+    setUsers(data.users || [])
+    setFilteredUsers(data.users || [])
     setLoading(false)
   }
 
   const handleToggleAdmin = async (userId: string, currentStatus: boolean) => {
-    await supabase
-      .from('profiles')
-      .update({ is_admin: !currentStatus })
-      .eq('id', userId)
-
+    await fetch('/api/admin/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, is_admin: !currentStatus }),
+    })
     fetchUsers()
   }
 
   const handleDelete = async (userId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')) return
-
-    await supabase.from('profiles').delete().eq('id', userId)
+    await fetch('/api/admin/users', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    })
     fetchUsers()
   }
 

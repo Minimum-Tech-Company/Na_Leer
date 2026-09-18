@@ -3,19 +3,15 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import {
   LayoutDashboard,
   Users,
   Receipt,
   CreditCard,
-  Settings,
   LogOut,
   Shield,
-  FileText,
 } from 'lucide-react'
-import { Profile } from '@/types'
 
 const adminNavigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -29,12 +25,10 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(true)
   const [authenticated, setAuthenticated] = useState(false)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
-  const supabase = createClient()
 
   const isLoginPage = pathname === '/admin/login'
 
@@ -45,32 +39,25 @@ export default function AdminLayout({
     }
 
     const checkAdmin = async () => {
-      const res = await fetch('/api/admin/auth/verify')
-      if (!res.ok) {
+      try {
+        const res = await fetch('/api/admin/auth/verify')
+        if (!res.ok) {
+          router.push('/admin/login')
+          return
+        }
+        setAuthenticated(true)
+      } catch {
         router.push('/admin/login')
         return
       }
-
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-        if (data) setProfile(data)
-      }
-
-      setAuthenticated(true)
       setLoading(false)
     }
 
     checkAdmin()
-  }, [supabase, router, isLoginPage])
+  }, [router, isLoginPage])
 
   const handleLogout = async () => {
     await fetch('/api/admin/auth/logout', { method: 'POST' })
-    await supabase.auth.signOut()
     router.push('/admin/login')
   }
 
@@ -117,23 +104,21 @@ export default function AdminLayout({
           <div className="p-4 border-t border-gray-800">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 bg-red-500/20 rounded-full flex items-center justify-center">
-                <span className="text-sm font-semibold text-red-400">
-                  {profile?.full_name?.charAt(0) || '?'}
-                </span>
+                <Shield className="text-sm font-semibold text-red-400 h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">
-                  {profile?.full_name}
+                  Administrateur
                 </p>
                 <p className="text-xs text-gray-400 truncate">
-                  Administrateur
+                  Super Admin
                 </p>
               </div>
             </div>
             <div className="flex gap-2">
               <Link href="/dashboard" className="flex-1">
                 <Button variant="ghost" className="w-full justify-start gap-3 text-gray-400 hover:text-white">
-                  <FileText className="h-4 w-4" />
+                  <LayoutDashboard className="h-4 w-4" />
                   App
                 </Button>
               </Link>
@@ -147,6 +132,17 @@ export default function AdminLayout({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Mobile header */}
+      <div className="lg:hidden flex items-center justify-between p-4 bg-gray-900">
+        <div className="flex items-center gap-2">
+          <Shield className="h-6 w-6 text-red-500" />
+          <span className="text-lg font-bold text-white">Admin</span>
+        </div>
+        <Button variant="ghost" className="text-gray-400 hover:text-white" onClick={handleLogout}>
+          <LogOut className="h-5 w-5" />
+        </Button>
       </div>
 
       {/* Main content */}
