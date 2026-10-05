@@ -96,7 +96,15 @@ export default function NewInvoicePage() {
     if (sendEmail && status === 'sent') {
       const selectedClient = clients.find(c => c.id === clientId)
       if (selectedClient?.email) {
-        try { await fetch('/api/invoices/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoice_id: invoice.id }) }) } catch {}
+        try {
+          const emailRes = await fetch('/api/invoices/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invoice_id: invoice.id }) })
+          const emailData = await emailRes.json()
+          if (!emailRes.ok) {
+            console.error('Email send failed:', emailData.error)
+          }
+        } catch (e) {
+          console.error('Email send error:', e)
+        }
       }
     }
     router.push(`/invoices/${invoice.id}`)

@@ -27,7 +27,7 @@ export async function sendInvoiceEmail({
   companyName: string
 }) {
   try {
-    await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: `${companyName} <noreply@${process.env.RESEND_DOMAIN || 'na-leer.org'}>`,
       to,
       subject: `Facture ${invoiceNumber} - ${companyName}`,
@@ -81,6 +81,10 @@ export async function sendInvoiceEmail({
         </html>
       `,
     })
+    if (error) {
+      console.error('Resend error:', error)
+      return { success: false, error }
+    }
     return { success: true }
   } catch (error) {
     console.error('Error sending email:', error)

@@ -104,7 +104,7 @@ export async function generateInvoicePDF(
   // ── "FACTURE" title ──
   doc.setFontSize(28)
   doc.setFont('helvetica', 'bold')
-  doc.text('FACTURE', pw - 14, 22, { align: 'right' })
+  doc.text('FACTURE', pw - 14, 16, { align: 'right' })
 
   // ── Invoice meta (right side, white) ──
   doc.setFontSize(9)
@@ -118,7 +118,7 @@ export async function generateInvoicePDF(
     `Échéance : ${fmtDate(invoice.due_date)}`,
     `Statut : ${statusMap[invoice.status] || invoice.status}`,
   ]
-  let my = 38
+  let my = 32
   meta.forEach(line => {
     doc.text(line, pw - 14, my, { align: 'right' })
     my -= 4.5

@@ -121,7 +121,7 @@ export default function InvoiceDetailPage() {
 
   const handlePaymentValidation = async (status: 'paid' | 'unpaid') => {
     if (!invoice) return
-    const newStatus = status === 'paid' ? 'paid' : invoice.status === 'paid' ? 'sent' : invoice.status
+    const newStatus = status === 'paid' ? 'paid' : (invoice.status === 'paid' || invoice.status === 'overdue') ? 'overdue' : invoice.status === 'sent' ? 'overdue' : invoice.status
     const paidAt = status === 'paid' ? new Date().toISOString() : null
     await supabase.from('invoices').update({ payment_status: status, status: newStatus, paid_at: paidAt }).eq('id', invoice.id)
     if (status === 'paid') {
