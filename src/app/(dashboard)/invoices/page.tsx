@@ -7,8 +7,13 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { Plus, Eye, Send, Receipt, Filter, Search } from 'lucide-react'
+import { Plus, Eye, Send, Receipt, Filter, Search, Calendar, CalendarDays } from 'lucide-react'
 import { Invoice } from '@/types'
+
+const MONTHS = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+]
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'destructive' | 'secondary'; color: string }> = {
   draft: { label: 'Brouillon', variant: 'secondary', color: 'bg-gray-100 text-gray-700' },
@@ -23,6 +28,8 @@ export default function InvoicesPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
+  const [yearFilter, setYearFilter] = useState('all')
+  const [monthFilter, setMonthFilter] = useState('all')
   const supabase = createClient()
 
   useEffect(() => {
@@ -30,23 +37,18 @@ export default function InvoicesPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      let query = supabase
+      const { data } = await supabase
         .from('invoices')
         .select('*, client:clients(*)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (filter !== 'all') {
-        query = query.eq('status', filter)
-      }
-
-      const { data } = await query
       setInvoices(data || [])
       setLoading(false)
     }
 
     fetchInvoices()
-  }, [supabase, filter])
+  }, [supabase])
 
   const handleSendInvoice = async (invoiceId: string) => {
     const { error } = await supabase
@@ -63,18 +65,43 @@ export default function InvoicesPage() {
     }
   }
 
-  const filteredInvoices = invoices.filter(inv =>
+  // Years available in the user's invoices (most recent first)
+  const availableYears = Array.from(
+    new Set(invoices.map(i => new Date(i.issue_date || i.created_at).getFullYear()))
+  ).sort((a, b) => b - a)
+
+  // Apply period (year + month) then status then search
+  const periodInvoices = invoices.filter(inv => {
+    const d = new Date(inv.issue_date || inv.created_at)
+    if (yearFilter !== 'all' && d.getFullYear() !== Number(yearFilter)) return false
+    if (monthFilter !== 'all' && d.getMonth() + 1 !== Number(monthFilter)) return false
+    return true
+  })
+
+  const statusInvoices = periodInvoices.filter(inv => filter === 'all' || inv.status === filter)
+
+  const filteredInvoices = statusInvoices.filter(inv =>
     inv.invoice_number?.toLowerCase().includes(search.toLowerCase()) ||
     inv.client?.name?.toLowerCase().includes(search.toLowerCase())
   )
 
   const stats = {
-    total: invoices.length,
-    draft: invoices.filter(i => i.status === 'draft').length,
-    sent: invoices.filter(i => i.status === 'sent').length,
-    paid: invoices.filter(i => i.status === 'paid').length,
-    overdue: invoices.filter(i => i.status === 'overdue').length,
+    total: periodInvoices.length,
+    draft: periodInvoices.filter(i => i.status === 'draft').length,
+    sent: periodInvoices.filter(i => i.status === 'sent').length,
+    paid: periodInvoices.filter(i => i.status === 'paid').length,
+    overdue: periodInvoices.filter(i => i.status === 'overdue').length,
   }
+
+  const periodLabel =
+    yearFilter === 'all' && monthFilter === 'all'
+      ? 'toutes les périodes'
+      : [
+          monthFilter !== 'all' ? MONTHS[Number(monthFilter) - 1] : null,
+          yearFilter !== 'all' ? yearFilter : null,
+        ]
+          .filter(Boolean)
+          .join(' ')
 
   if (loading) {
     return (
@@ -143,17 +170,64 @@ export default function InvoicesPage() {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Rechercher une facture..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-10 pl-10 pr-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-        />
+      {/* Search + period filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 sm:max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Rechercher une facture..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full h-10 pl-10 pr-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+          />
+        </div>
+
+        <div className="flex gap-3">
+          <div className="relative flex-1 sm:flex-none">
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <select
+              value={monthFilter}
+              onChange={(e) => setMonthFilter(e.target.value)}
+              className="w-full h-10 pl-10 pr-8 rounded-xl border border-gray-200 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+            >
+              <option value="all">Tous les mois</option>
+              {MONTHS.map((m, i) => (
+                <option key={m} value={String(i + 1)}>{m}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="relative flex-1 sm:flex-none">
+            <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <select
+              value={yearFilter}
+              onChange={(e) => setYearFilter(e.target.value)}
+              className="w-full h-10 pl-10 pr-8 rounded-xl border border-gray-200 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+            >
+              <option value="all">Toutes les années</option>
+              {availableYears.map(y => (
+                <option key={y} value={String(y)}>{y}</option>
+              ))}
+            </select>
+          </div>
+
+          {(yearFilter !== 'all' || monthFilter !== 'all') && (
+            <button
+              onClick={() => { setYearFilter('all'); setMonthFilter('all') }}
+              className="h-10 px-3 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
+            >
+              Réinitialiser
+            </button>
+          )}
+        </div>
       </div>
+
+      {periodLabel !== 'toutes les périodes' && (
+        <p className="text-sm text-gray-500 -mt-2">
+          <span className="font-medium text-gray-700">{periodLabel}</span> — {stats.total} facture{stats.total !== 1 ? 's' : ''}
+        </p>
+      )}
 
       {/* Invoices list */}
       {filteredInvoices.length === 0 ? (

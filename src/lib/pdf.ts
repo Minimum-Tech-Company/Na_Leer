@@ -54,6 +54,54 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
   }
 }
 
+function buildQrPayload(
+  invoice: Invoice,
+  profile: Profile,
+  items: InvoiceItem[],
+  paymentUrl?: string
+): string {
+  const cur = (invoice.currency || 'XOF') === 'XOF' ? 'FCFA' : (invoice.currency || 'XOF')
+  const statusMap: Record<string, string> = {
+    draft: 'BROUILLON', sent: 'ENVOYÉE', paid: 'PAYÉE', overdue: 'EN RETARD', cancelled: 'ANNULÉE',
+  }
+
+  const lines: string[] = []
+  lines.push(`FACTURE ${invoice.invoice_number}`)
+  lines.push('')
+  lines.push(`De : ${(profile.company_name || 'Votre Entreprise').toUpperCase()}`)
+  if (profile.tax_id) lines.push(`NINEA : ${profile.tax_id}`)
+  if (profile.company_phone) lines.push(`Tel : ${profile.company_phone}`)
+  lines.push('')
+  lines.push(`Client : ${invoice.client?.name || 'Client'}`)
+  lines.push(`Date : ${fmtDate(invoice.issue_date)}`)
+  lines.push(`Echeance : ${fmtDate(invoice.due_date)}`)
+  lines.push(`Statut : ${statusMap[invoice.status] || invoice.status}`)
+  lines.push('')
+  lines.push('Detail :')
+
+  const maxItems = 10
+  items.slice(0, maxItems).forEach(item => {
+    lines.push(`- ${item.description} x${item.quantity} = ${fmtAmount(item.amount)} ${cur}`)
+  })
+  if (items.length > maxItems) {
+    lines.push(`- ... et ${items.length - maxItems} autre(s) ligne(s)`)
+  }
+
+  lines.push('')
+  lines.push(`Sous-total : ${cur} ${fmtAmount(invoice.subtotal)}`)
+  if (invoice.tax_rate > 0) {
+    lines.push(`TVA (${invoice.tax_rate}%) : ${cur} ${fmtAmount(invoice.tax_amount)}`)
+  }
+  lines.push(`TOTAL : ${cur} ${fmtAmount(invoice.total)}`)
+
+  if (paymentUrl) {
+    lines.push('')
+    lines.push(`Payer en ligne : ${paymentUrl}`)
+  }
+
+  return lines.join('\n')
+}
+
 export async function generateInvoicePDF(
   invoice: Invoice,
   profile: Profile,
@@ -250,22 +298,23 @@ export async function generateInvoicePDF(
     notesY += splitNotes.length * 3.5 + 4
   }
 
-  // ── QR Code ──
-  const qrUrl = paymentUrl || `${typeof window !== 'undefined' ? window.location.origin : 'https://na-leer.org'}/invoices/${invoice.id}`
+  // ── QR Code (invoice details encoded directly — no website needed) ──
   try {
-    const qrDataUrl = await QRCode.toDataURL(qrUrl, {
-      width: 120,
+    const qrPayload = buildQrPayload(invoice, profile, items, paymentUrl || undefined)
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, {
+      width: 160,
       margin: 1,
+      errorCorrectionLevel: 'L',
       color: { dark: '#000000', light: '#ffffff' },
     })
-    const qrSize = 22
-    const qrY = ph - 18 - qrSize
+    const qrSize = 24
+    const qrY = ph - 21 - qrSize
     doc.addImage(qrDataUrl, 'PNG', 14, qrY, qrSize, qrSize)
 
     doc.setFontSize(7)
     doc.setTextColor(120, 120, 120)
     doc.setFont('helvetica', 'normal')
-    doc.text('Scannez pour payer', 14, qrY + qrSize + 3)
+    doc.text(paymentUrl ? 'Scannez : détails + paiement' : 'Scannez pour voir la facture', 14, qrY + qrSize + 3)
   } catch { /* skip qr */ }
 
   // ── Footer ──
