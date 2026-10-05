@@ -70,7 +70,7 @@ export async function generateInvoicePDF(
 
   // ── Header background ──
   doc.setFillColor(primary[0], primary[1], primary[2])
-  doc.rect(0, 0, pw, 42, 'F')
+  doc.rect(0, 0, pw, 46, 'F')
 
   // ── Logo (base64 to avoid CORS) ──
   if (profile.logo_url) {
@@ -99,12 +99,12 @@ export async function generateInvoicePDF(
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text((profile.company_name || 'Votre Entreprise').toUpperCase(), 14, 38)
+  doc.text((profile.company_name || 'Votre Entreprise').toUpperCase(), 14, 40)
 
   // ── "FACTURE" title ──
   doc.setFontSize(28)
   doc.setFont('helvetica', 'bold')
-  doc.text('FACTURE', pw - 14, 16, { align: 'right' })
+  doc.text('FACTURE', pw - 14, 14, { align: 'right' })
 
   // ── Invoice meta (right side, white) ──
   doc.setFontSize(9)
@@ -118,7 +118,7 @@ export async function generateInvoicePDF(
     `Échéance : ${fmtDate(invoice.due_date)}`,
     `Statut : ${statusMap[invoice.status] || invoice.status}`,
   ]
-  let my = 32
+  let my = 28
   meta.forEach(line => {
     doc.text(line, pw - 14, my, { align: 'right' })
     my -= 4.5
