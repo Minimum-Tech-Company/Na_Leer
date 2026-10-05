@@ -42,6 +42,7 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
     const res = await fetch(url, { mode: 'cors' })
     if (!res.ok) return null
     const blob = await res.blob()
+    if (blob.size === 0) return null
     return new Promise((resolve) => {
       const reader = new FileReader()
       reader.onloadend = () => resolve(reader.result as string)

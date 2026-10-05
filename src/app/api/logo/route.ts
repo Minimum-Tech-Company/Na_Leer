@@ -9,13 +9,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'path requis' }, { status: 400 })
     }
 
+    // Sanitize path - prevent directory traversal
+    if (path.includes('..')) {
+      return NextResponse.json({ error: 'Chemin invalide' }, { status: 400 })
+    }
+
     const supabase = await createClient()
     const { data, error } = await supabase.storage.from('logos').download(path)
     if (error || !data) {
+      console.error('Logo download error:', error?.message)
       return NextResponse.json({ error: 'Logo non trouvé' }, { status: 404 })
     }
 
     const buffer = Buffer.from(await data.arrayBuffer())
+    if (buffer.length === 0) {
+      return NextResponse.json({ error: 'Logo vide' }, { status: 404 })
+    }
+
     const base64 = buffer.toString('base64')
     const mime = data.type || 'image/png'
 

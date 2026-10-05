@@ -68,9 +68,15 @@ export default function SettingsPage() {
   const uploadLogo = async (): Promise<string | null> => {
     if (!logoFile || !profile.id) return logoPreview
     setLogoUploading(true)
-    const ext = logoFile.name.split('.').pop()
+    const ext = logoFile.name.split('.').pop() || 'png'
     const path = `${profile.id}/logo.${ext}`
-    await supabase.storage.from('logos').upload(path, logoFile, { upsert: true })
+    const { error } = await supabase.storage.from('logos').upload(path, logoFile, { upsert: true })
+    if (error) {
+      console.error('Logo upload error:', error.message)
+      alert('Erreur lors du téléversement du logo: ' + error.message)
+      setLogoUploading(false)
+      return logoPreview
+    }
     const { data } = supabase.storage.from('logos').getPublicUrl(path)
     setLogoUploading(false)
     return data.publicUrl
