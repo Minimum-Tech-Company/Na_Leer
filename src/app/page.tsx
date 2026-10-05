@@ -5,6 +5,7 @@ import {
   Building2, TrendingUp, Mail, Wallet, Banknote
 } from 'lucide-react'
 import { WaveLogo, OrangeMoneyLogo, FreeMoneyLogo, VisaLogo, MastercardLogo, WizallLogo } from '@/components/payment-logos'
+import VisitCounter from '@/components/visit-counter'
 
 const features = [
   {
@@ -243,6 +244,9 @@ export default function LandingPage() {
             <VisaLogo className="h-10" />
             <MastercardLogo className="h-10" />
             <WizallLogo className="h-10" />
+          </div>
+          <div className="mt-10 pt-10 border-t border-gray-200">
+            <VisitCounter />
           </div>
         </div>
       </section>
