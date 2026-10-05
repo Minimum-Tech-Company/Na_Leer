@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatDate } from '@/lib/utils'
 import {
   Receipt,
   CreditCard,
@@ -562,7 +562,7 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-gray-900">{payment.method === 'dexchange' ? 'Wave / Orange Money' : payment.method}</p>
-                      <p className="text-xs text-gray-500">{new Date(payment.created_at).toLocaleDateString('fr-FR')}</p>
+                      <p className="text-xs text-gray-500">{formatDate(payment.created_at)}</p>
                     </div>
                   </div>
                   <div className="text-right">

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { formatDate } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -241,7 +242,7 @@ export default function TeamPage() {
                   <div>
                     <p className="font-medium text-gray-900">{inv.email}</p>
                     <p className="text-sm text-gray-500">
-                      {inv.role === 'admin' ? 'Admin' : 'Membre'} • Expire le {new Date(inv.expires_at).toLocaleDateString('fr-FR')}
+                      {inv.role === 'admin' ? 'Admin' : 'Membre'} • Expire le {formatDate(inv.expires_at)}
                     </p>
                   </div>
                   <Button

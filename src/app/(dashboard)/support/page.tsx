@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { formatDate } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -204,7 +205,7 @@ export default function SupportPage() {
                   <div className="flex items-center gap-3 text-xs text-gray-400">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {new Date(ticket.created_at).toLocaleDateString('fr-FR')}
+                      {formatDate(ticket.created_at)}
                     </span>
                     {ticket.is_business && (
                       <Badge className="bg-purple-100 text-purple-700 text-xs">Business</Badge>

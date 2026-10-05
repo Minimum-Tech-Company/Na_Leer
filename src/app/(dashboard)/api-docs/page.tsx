@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { formatDate } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -210,8 +211,8 @@ export default function ApiDocsPage() {
                       <p className="font-medium text-gray-900">{key.name}</p>
                       <p className="text-sm text-gray-500 font-mono">{key.key_prefix}</p>
                       <p className="text-xs text-gray-400">
-                        Créée le {new Date(key.created_at).toLocaleDateString('fr-FR')}
-                        {key.last_used_at && ` • Dernière utilisation: ${new Date(key.last_used_at).toLocaleDateString('fr-FR')}`}
+                        Créée le {formatDate(key.created_at)}
+                        {key.last_used_at && ` • Dernière utilisation: ${formatDate(key.last_used_at)}`}
                       </p>
                     </div>
                   </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -109,7 +110,7 @@ export default function AdminUsersPage() {
                       )}
                     </div>
                     <p className="text-xs text-gray-400 mt-1">
-                      Inscrit le {new Date(user.created_at).toLocaleDateString('fr-FR')}
+                      Inscrit le {formatDate(user.created_at)}
                     </p>
                   </div>
                 </div>
