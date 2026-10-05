@@ -77,8 +77,8 @@ export default function AdminLayout({
     <div className="min-h-screen bg-gray-50">
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex grow flex-col bg-gray-900 border-r border-gray-800">
-          <div className="flex items-center gap-2 p-5 border-b border-gray-800">
+        <div className="flex grow flex-col bg-[#0b1220] border-r border-[#27364f]">
+          <div className="flex items-center gap-2 p-5 border-b border-[#27364f]">
             <Shield className="h-7 w-7 text-red-500" />
             <span className="text-lg font-bold text-white">NA-Leer Admin</span>
           </div>
@@ -92,7 +92,7 @@ export default function AdminLayout({
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive
                       ? 'bg-red-500/10 text-red-400'
-                      : 'text-gray-300 hover:bg-gray-800'
+                      : 'text-gray-300 hover:bg-[#162033]'
                   }`}
                 >
                   <item.icon className="h-5 w-5" />
@@ -101,7 +101,7 @@ export default function AdminLayout({
               )
             })}
           </nav>
-          <div className="p-4 border-t border-gray-800">
+          <div className="p-4 border-t border-[#27364f]">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 bg-red-500/20 rounded-full flex items-center justify-center">
                 <Shield className="text-sm font-semibold text-red-400 h-5 w-5" />
@@ -135,7 +135,7 @@ export default function AdminLayout({
       </div>
 
       {/* Mobile header */}
-      <div className="lg:hidden flex items-center justify-between p-4 bg-gray-900">
+      <div className="lg:hidden flex items-center justify-between p-4 bg-[#0b1220]">
         <div className="flex items-center gap-2">
           <Shield className="h-6 w-6 text-red-500" />
           <span className="text-lg font-bold text-white">Admin</span>

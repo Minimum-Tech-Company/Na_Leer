@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import Link from 'next/link'
+import ThemeToggle from '@/components/theme-toggle'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -199,6 +200,9 @@ export default function RegisterPage() {
       {/* Right - Form */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-gray-50">
         <div className="w-full max-w-lg">
+          <div className="flex justify-end mb-4 lg:mb-0">
+            <ThemeToggle />
+          </div>
           <div className="mb-6 sm:mb-8">
             <Link href="/" className="flex items-center gap-2 mb-6 lg:hidden">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">

@@ -44,7 +44,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-gray-900 border-gray-800">
+      <Card className="w-full max-w-md bg-[#0b1220] border-[#27364f]">
         <CardHeader className="text-center">
           <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <Shield className="h-8 w-8 text-red-500" />
@@ -67,7 +67,7 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Entrez le mot de passe admin"
-                  className="bg-gray-800 border-gray-700 text-white pr-10"
+                  className="bg-[#162033] border-[#1e293b] text-white pr-10"
                   autoFocus
                 />
                 <button

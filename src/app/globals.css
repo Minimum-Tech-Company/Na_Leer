@@ -1,8 +1,125 @@
 @import "tailwindcss";
 
+/* Pilotage du thème sombre par classe sur <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #0a0a0a;
+}
+
+/*
+ * Thème sombre : on inverse tout l'axe neutre (white + gray-50→900).
+ * Les utils Tailwind v4 compilent en var(--color-*), donc bg-white,
+ * text-gray-900, border-gray-200… s'adaptent tous d'un seul bloc.
+ * Comme toute la gamme est miroir, les contrastes sont préservés.
+ */
+.dark {
+  --background: #0b1220;
+  --foreground: #f8fafc;
+
+  /* Surfaces : l'ordre d'élévation est conservé
+     (page gray-50 = plus sombre, carte white = plus claire) */
+  --color-gray-50: #0b1220;
+  --color-white: #162033;
+  --color-gray-100: #1e293b;
+  --color-gray-200: #27364f;
+  --color-gray-300: #334155;
+
+  /* Textes : la hiérarchie s'inverse (900 = le plus clair) */
+  --color-gray-400: #8b9bb0;
+  --color-gray-500: #94a3b8;
+  --color-gray-600: #cbd5e1;
+  --color-gray-700: #e2e8f0;
+  --color-gray-800: #f1f5f9;
+  --color-gray-900: #f8fafc;
+
+  /* Teintes colorées en surbrillance → versions sombres */
+  --color-slate-50: #0f172a;
+  --color-slate-100: #1e293b;
+  --color-slate-200: #334155;
+
+  --color-blue-50: #172554;
+  --color-blue-100: #1e3a8a;
+  --color-indigo-50: #1e1b4b;
+  --color-indigo-100: #312e81;
+
+  --color-green-50: #052e16;
+  --color-green-100: #14532d;
+  --color-emerald-50: #022c22;
+  --color-emerald-100: #064e3b;
+
+  --color-red-50: #450a0a;
+  --color-red-100: #7f1d1d;
+  --color-rose-50: #4c0519;
+  --color-rose-100: #881337;
+
+  --color-amber-50: #451a03;
+  --color-amber-100: #78350f;
+  --color-orange-50: #431407;
+  --color-orange-100: #7c2d12;
+
+  --color-yellow-50: #422006;
+  --color-yellow-100: #713f12;
+
+  /* Teintes -700/-800 utilisées comme texte (badges, liens) :
+     éclaircies pour rester lisibles sur fond sombre */
+  --color-blue-700: #93c5fd;
+  --color-blue-800: #bfdbfe;
+  --color-blue-900: #dbeafe;
+
+  --color-green-700: #86efac;
+  --color-green-800: #bbf7d0;
+  --color-emerald-700: #6ee7b7;
+  --color-emerald-500: #34d399;
+
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+  --color-red-500: #f87171;
+
+  --color-amber-700: #fcd34d;
+  --color-amber-800: #fde68a;
+  --color-amber-500: #fbbf24;
+  --color-amber-600: #fcd34d;
+
+  --color-orange-700: #fdba74;
+  --color-orange-800: #fed7aa;
+  --color-orange-600: #fdba74;
+
+  --color-yellow-700: #fde047;
+  --color-yellow-800: #fef08a;
+  --color-yellow-600: #facc15;
+
+  --color-purple-50: #2e1065;
+  --color-purple-100: #4c1d95;
+  --color-purple-600: #c084fc;
+  --color-purple-700: #d8b4fe;
+  --color-purple-800: #e9d5ff;
+
+  --color-indigo-600: #a5b4fc;
+  --color-indigo-700: #c7d2fe;
+
+  /* Bordures de marque : restent visibles sur fond sombre */
+  --color-blue-500: #60a5fa;
+  --color-blue-400: #93c5fd;
+  --color-red-400: #fca5a5;
+  --color-green-400: #4ade80;
+}
+
+/*
+ * Ces règles ne sont PAS dans une couche, donc elles priment sur les utils
+ * Tailwind (qui vivent dans @layer utilities).
+ * text-white et border-t-white sont utilisés sur des fonds colorés ou
+ * sombres : ils doivent rester RÉELLEMENT blancs, alors que --color-white
+ * est inversé pour que bg-white devienne une surface sombre.
+ */
+.dark .text-white,
+.dark .hover\:text-white:hover {
+  color: #ffffff;
+}
+
+.dark .border-t-white {
+  border-top-color: #ffffff;
 }
 
 body {
@@ -87,6 +204,10 @@ body {
   box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
+.dark .card-hover:hover {
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.5), 0 4px 10px -5px rgba(0, 0, 0, 0.35);
+}
+
 /* Smooth scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
@@ -100,6 +221,14 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #d1d5db;
   border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -126,4 +255,8 @@ select {
   background-repeat: no-repeat;
   background-size: 1.5em 1.5em;
   padding-right: 2.5rem;
+}
+
+.dark select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
 }

@@ -190,20 +190,72 @@ export default function NewInvoicePage() {
         </CardHeader>
         <CardContent className="space-y-3">
           {items.map((item, index) => (
-            <div key={index} className="flex gap-3 items-start p-3 bg-gray-50/50 rounded-xl">
-              <div className="flex-1">
-                <Input placeholder="Description du service" value={item.description} onChange={(e) => updateItem(index, 'description', e.target.value)} className="rounded-xl border-0 bg-white" />
+            <div key={index} className="p-3 sm:p-4 bg-gray-50/50 rounded-xl border border-gray-200">
+              <div className="grid grid-cols-2 lg:grid-cols-12 gap-3">
+                {/* Intitulé — pleine largeur sur mobile */}
+                <div className="col-span-2 lg:col-span-5">
+                  <label htmlFor={`item-desc-${index}`} className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Intitulé du produit / service
+                  </label>
+                  <Input
+                    id={`item-desc-${index}`}
+                    placeholder="Ex. Développement web"
+                    value={item.description}
+                    onChange={(e) => updateItem(index, 'description', e.target.value)}
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="lg:col-span-2">
+                  <label htmlFor={`item-qty-${index}`} className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Qté
+                  </label>
+                  <Input
+                    id={`item-qty-${index}`}
+                    type="number"
+                    placeholder="1"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="lg:col-span-2">
+                  <label htmlFor={`item-price-${index}`} className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Prix unitaire
+                  </label>
+                  <Input
+                    id={`item-price-${index}`}
+                    type="number"
+                    placeholder="0"
+                    min="0"
+                    value={item.unit_price || ''}
+                    onChange={(e) => updateItem(index, 'unit_price', Number(e.target.value))}
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="lg:col-span-2">
+                  <span className="block text-xs font-semibold text-gray-700 mb-1.5">Montant</span>
+                  <div className="h-10 flex items-center justify-end px-3 rounded-xl bg-white border border-gray-200 text-sm font-bold text-gray-900">
+                    {formatCurrency(item.amount)}
+                  </div>
+                </div>
+
+                <div className="lg:col-span-1 flex items-end justify-end lg:pb-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeItem(index)}
+                    disabled={items.length === 1}
+                    aria-label={`Supprimer la ligne ${index + 1}`}
+                    className="rounded-xl hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="w-24">
-                <Input type="number" placeholder="Qté" min="1" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))} className="rounded-xl border-0 bg-white" />
-              </div>
-              <div className="w-36">
-                <Input type="number" placeholder="Prix unitaire" min="0" value={item.unit_price || ''} onChange={(e) => updateItem(index, 'unit_price', Number(e.target.value))} className="rounded-xl border-0 bg-white" />
-              </div>
-              <div className="w-32 text-right text-sm font-bold text-gray-900 pt-2.5">{formatCurrency(item.amount)}</div>
-              <Button variant="ghost" size="icon" onClick={() => removeItem(index)} disabled={items.length === 1} className="rounded-xl hover:bg-red-50 hover:text-red-600">
-                <Trash2 className="h-4 w-4" />
-              </Button>
             </div>
           ))}
           <Button variant="outline" onClick={addItem} className="rounded-xl border-dashed border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 w-full btn-press">

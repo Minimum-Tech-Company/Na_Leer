@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import ThemeToggle from '@/components/theme-toggle'
 import {
   FileText,
   LayoutDashboard,
@@ -116,7 +117,7 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-gray-50/80">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-[#0b1220]/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
         <div className={`fixed inset-y-0 left-0 w-72 bg-white shadow-2xl transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="flex items-center justify-between p-5 border-b border-gray-100">
             <Link href="/" className="flex items-center gap-2.5">
@@ -263,7 +264,7 @@ export default function DashboardLayout({
       {/* Main content */}
       <div className="lg:pl-72">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-gray-200/80 bg-white/80 backdrop-blur-lg px-4 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-gray-200/80 bg-white/80 dark:bg-[#162033]/80 backdrop-blur-lg px-4 sm:px-6 lg:px-8">
           <button
             className="lg:hidden p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors"
             onClick={() => setSidebarOpen(true)}
@@ -272,6 +273,7 @@ export default function DashboardLayout({
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <span className="text-sm text-gray-500 hidden sm:block font-medium">
               {profile?.company_name || profile?.email}
             </span>

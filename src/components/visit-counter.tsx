@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import { Eye, TrendingUp } from 'lucide-react'
 
+/** Le compteur reste invisible tant que le total n'a pas atteint ce seuil. */
+const VISIBILITY_THRESHOLD = 50
+
 function getSessionId(): string {
   if (typeof window === 'undefined') return ''
   let id = sessionStorage.getItem('nl_vid')
@@ -47,8 +50,11 @@ export default function VisitCounter() {
     return () => clearInterval(interval)
   }, [])
 
+  // Masqué tant que le seuil n'est pas atteint
+  if (total === null || total < VISIBILITY_THRESHOLD) return null
+
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+    <div className="mt-10 pt-10 border-t border-gray-200 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
       <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 shadow-sm">
         <span className="relative flex h-2.5 w-2.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />

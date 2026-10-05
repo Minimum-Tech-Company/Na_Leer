@@ -254,7 +254,7 @@ export default function ApiDocsPage() {
             <p className="text-sm text-gray-600 mb-2">
               Utilisez votre clé API dans le header Authorization :
             </p>
-            <pre className="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">
+            <pre className="bg-[#0b1220] text-green-400 p-3 rounded-lg text-sm overflow-x-auto">
               Authorization: Bearer nkl_votre_cle_api_ici
             </pre>
           </div>
@@ -295,7 +295,7 @@ export default function ApiDocsPage() {
 
           <div>
             <h4 className="font-semibold text-gray-900 mb-2">Exemple avec cURL</h4>
-            <pre className="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto whitespace-pre-wrap">
+            <pre className="bg-[#0b1220] text-green-400 p-3 rounded-lg text-sm overflow-x-auto whitespace-pre-wrap">
 {`curl -X GET https://na-leer.vercel.app/api/v1/invoices \\
   -H "Authorization: Bearer nkl_votre_cle_api_ici"`}
             </pre>

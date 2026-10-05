@@ -24,6 +24,14 @@ import {
 } from 'lucide-react'
 import { Invoice, Client, Payment } from '@/types'
 
+type PeriodKey = 'week' | 'month' | 'year'
+
+const PERIOD_OPTIONS: { key: PeriodKey; label: string; revenueLabel: string }[] = [
+  { key: 'week', label: 'Semaine', revenueLabel: 'Revenus cette semaine' },
+  { key: 'month', label: 'Mois', revenueLabel: 'Revenus ce mois-ci' },
+  { key: 'year', label: 'Année', revenueLabel: 'Revenus cette année' },
+]
+
 export default function DashboardPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [clients, setClients] = useState<Client[]>([])
@@ -52,19 +60,11 @@ export default function DashboardPage() {
       const activePlanId = sub?.plan_id || 'free'
       setPlanId(activePlanId)
 
-      const startOfMonth = new Date()
-      startOfMonth.setDate(1)
-      startOfMonth.setHours(0, 0, 0, 0)
-
-      let invoiceQuery = supabase
+      const invoiceQuery = supabase
         .from('invoices')
         .select('*, client:clients(name)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-
-      if (activePlanId === 'free') {
-        invoiceQuery = invoiceQuery.gte('created_at', startOfMonth.toISOString())
-      }
 
       const [invoicesRes, clientsRes, paymentsRes] = await Promise.all([
         invoiceQuery,
@@ -115,6 +115,38 @@ export default function DashboardPage() {
   const maxInvoiceTotal = Math.max(...invoices.map(i => Number(i.total)), 1)
 
   const [dayOffset, setDayOffset] = useState(0)
+  const [period, setPeriod] = useState<PeriodKey>('month')
+
+  // Bornes de la période sélectionnée (semaine = lundi → dimanche)
+  const periodRange = useMemo(() => {
+    const now = new Date()
+    let start: Date
+    let end: Date
+    if (period === 'week') {
+      const dayIndex = (now.getDay() + 6) % 7 // 0 = lundi
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayIndex)
+      end = new Date(start)
+      end.setDate(end.getDate() + 7)
+    } else if (period === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1)
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    } else {
+      start = new Date(now.getFullYear(), 0, 1)
+      end = new Date(now.getFullYear() + 1, 0, 1)
+    }
+    return { startMs: start.getTime(), endMs: end.getTime() }
+  }, [period])
+
+  const periodPaidInvoices = useMemo(
+    () =>
+      paid.filter((i) => {
+        const t = new Date(i.created_at).getTime()
+        return t >= periodRange.startMs && t < periodRange.endMs
+      }),
+    [paid, periodRange]
+  )
+
+  const periodRevenue = periodPaidInvoices.reduce((s, i) => s + Number(i.total), 0)
 
   const dailyRevenue = useMemo(() => {
     const days: { label: string; dateStr: string; amount: number }[] = []
@@ -127,7 +159,7 @@ export default function DashboardPage() {
       const dateStr = `${y}-${m}-${dd}`
       const dayRevenue = paid
         .filter(inv => {
-          const raw = inv.paid_at || inv.created_at
+          const raw = inv.created_at
           if (!raw) return false
           return raw.substring(0, 10) === dateStr
         })
@@ -387,21 +419,42 @@ export default function DashboardPage() {
 
         <Card className={`border-0 shadow-sm transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`} style={{ transitionDelay: '450ms' }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Ce mois-ci</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-base">
+                {PERIOD_OPTIONS.find(p => p.key === period)?.revenueLabel}
+              </CardTitle>
+              <div className="flex gap-1 p-1 rounded-xl bg-gray-100">
+                {PERIOD_OPTIONS.map(p => (
+                  <button
+                    key={p.key}
+                    onClick={() => setPeriod(p.key)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
+                      period === p.key
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">Factures créées</span>
-              <span className="font-bold text-gray-900">{thisMonth.length}</span>
+            <div className="flex items-baseline justify-between">
+              <span className="text-3xl font-bold text-green-600">{formatCurrency(periodRevenue)}</span>
+              <span className="text-xs text-gray-500">
+                {periodPaidInvoices.length} facture{periodPaidInvoices.length > 1 ? 's' : ''} payée{periodPaidInvoices.length > 1 ? 's' : ''}
+              </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">Factures payées</span>
-              <span className="font-bold text-gray-900">{thisMonth.filter(i => i.status === 'paid').length}</span>
+              <span className="text-sm text-gray-500">Factures créées (mois)</span>
+              <span className="font-bold text-gray-900">{thisMonth.length}</span>
             </div>
             <div className="border-t pt-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">Revenus ce mois</span>
-                <span className="font-bold text-green-600">{formatCurrency(revenueThisMonth)}</span>
+                <span className="text-sm text-gray-500">Cumul historique</span>
+                <span className="font-bold text-gray-900">{formatCurrency(totalRevenue)}</span>
               </div>
             </div>
             <div className="flex items-center justify-between">

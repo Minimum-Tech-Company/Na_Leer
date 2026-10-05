@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { WaveLogo, OrangeMoneyLogo, FreeMoneyLogo, VisaLogo, MastercardLogo, WizallLogo } from '@/components/payment-logos'
 import VisitCounter from '@/components/visit-counter'
+import ThemeToggle from '@/components/theme-toggle'
 
 const features = [
   {
@@ -57,7 +58,7 @@ const paymentMethods = [
   { name: 'Wave', color: 'bg-blue-500', textColor: 'text-white' },
   { name: 'Orange Money', color: 'bg-orange-500', textColor: 'text-white' },
   { name: 'Free Money', color: 'bg-red-500', textColor: 'text-white' },
-  { name: 'Visa / Mastercard', color: 'bg-gray-800', textColor: 'text-white' },
+  { name: 'Visa / Mastercard', color: 'bg-[#162033]', textColor: 'text-white' },
 ]
 
 const testimonials = [
@@ -70,7 +71,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Nav */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-lg border-b border-gray-100 z-50">
+      <nav className="fixed top-0 w-full bg-white/80 dark:bg-[#162033]/80 backdrop-blur-lg border-b border-gray-100 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
@@ -80,6 +81,7 @@ export default function LandingPage() {
               <span className="text-xl font-bold text-gray-900">NA-Leer</span>
             </div>
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               <Link href="/login" className="text-gray-600 hover:text-gray-900 text-sm font-medium px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
                 Connexion
               </Link>
@@ -175,7 +177,7 @@ export default function LandingPage() {
       </section>
 
       {/* How payments work - direct to your account */}
-      <section className="py-20 lg:py-28 bg-gray-900">
+      <section className="py-20 lg:py-28 bg-[#0b1220]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="text-blue-400 font-semibold text-sm uppercase tracking-wider">Paiements</span>
@@ -186,7 +188,7 @@ export default function LandingPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {/* Step 1 */}
-            <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
+            <div className="bg-[#162033] rounded-2xl p-8 border border-[#1e293b]">
               <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-5">
                 <FileText className="h-6 w-6 text-white" />
               </div>
@@ -196,7 +198,7 @@ export default function LandingPage() {
               </p>
             </div>
             {/* Step 2 */}
-            <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
+            <div className="bg-[#162033] rounded-2xl p-8 border border-[#1e293b]">
               <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center mb-5">
                 <Send className="h-6 w-6 text-white" />
               </div>
@@ -206,7 +208,7 @@ export default function LandingPage() {
               </p>
             </div>
             {/* Step 3 */}
-            <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
+            <div className="bg-[#162033] rounded-2xl p-8 border border-[#1e293b]">
               <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center mb-5">
                 <Wallet className="h-6 w-6 text-white" />
               </div>
@@ -217,7 +219,7 @@ export default function LandingPage() {
             </div>
           </div>
           {/* Key benefit */}
-          <div className="mt-12 bg-gray-800 rounded-2xl p-8 border border-gray-700 flex flex-col md:flex-row items-center gap-6">
+          <div className="mt-12 bg-[#162033] rounded-2xl p-8 border border-[#1e293b] flex flex-col md:flex-row items-center gap-6">
             <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center flex-shrink-0">
               <Banknote className="h-8 w-8 text-white" />
             </div>
@@ -238,16 +240,18 @@ export default function LandingPage() {
             <p className="text-gray-500 text-sm font-medium uppercase tracking-wider">Moyens de paiement acceptés</p>
           </div>
           <div className="flex flex-wrap justify-center items-center gap-3">
-            <WaveLogo className="h-10" />
-            <OrangeMoneyLogo className="h-10" />
-            <FreeMoneyLogo className="h-10" />
-            <VisaLogo className="h-10" />
-            <MastercardLogo className="h-10" />
-            <WizallLogo className="h-10" />
+            {/* Pastille claire : les logos de marque (ex. Visa bleu foncé)
+                seraient invisibles sur un fond sombre */}
+            <div className="flex flex-wrap justify-center items-center gap-6 px-6 py-4 rounded-2xl bg-[#ffffff] border border-[#e5e7eb] shadow-sm">
+              <WaveLogo className="h-10" />
+              <OrangeMoneyLogo className="h-10" />
+              <FreeMoneyLogo className="h-10" />
+              <VisaLogo className="h-10" />
+              <MastercardLogo className="h-10" />
+              <WizallLogo className="h-10" />
+            </div>
           </div>
-          <div className="mt-10 pt-10 border-t border-gray-200">
-            <VisitCounter />
-          </div>
+          <VisitCounter />
         </div>
       </section>
 
@@ -494,7 +498,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 lg:py-12 bg-gray-900">
+      <footer className="py-8 lg:py-12 bg-[#0b1220]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8 mb-8">
             <div>
@@ -531,7 +535,7 @@ export default function LandingPage() {
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
+          <div className="border-t border-[#27364f] pt-8 text-center text-gray-500 text-sm">
             &copy; {new Date().getFullYear()} NA-Leer. Tous droits réservés. Fait avec ❤️ au Sénégal
           </div>
         </div>

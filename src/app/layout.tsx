@@ -69,6 +69,12 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head>
+        {/* Applique le thème avant le premier rendu pour éviter le flash blanc */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('nl_theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}else{document.documentElement.style.colorScheme='light';}}catch(e){}})();`,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
