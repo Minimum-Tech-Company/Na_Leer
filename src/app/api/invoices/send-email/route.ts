@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { sendInvoiceEmail } from '@/lib/email'
 import { createTransaction, getTransactionToken, FedaPayConfig } from '@/lib/fedapay'
 import { decrypt } from '@/lib/encryption'
+import { formatDate } from '@/lib/utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
       to: invoice.client.email,
       invoiceNumber: invoice.invoice_number,
       amount: `${invoice.total} ${invoice.currency || 'XOF'}`,
-      dueDate: invoice.due_date,
+      dueDate: formatDate(invoice.due_date),
       paymentUrl: url,
       companyName,
     })
