@@ -221,10 +221,10 @@ export async function generateInvoicePDF(
   doc.setTextColor(100, 100, 100)
 
   doc.text('Sous-total', totalsX, finalY)
-  doc.text(`${fmtAmount(invoice.subtotal)} ${curSymbol}`, pw - 14, finalY, { align: 'right' })
+  doc.text(`${curSymbol} ${fmtAmount(invoice.subtotal)}`, pw - 14, finalY, { align: 'right' })
 
   doc.text(`TVA (${invoice.tax_rate}%)`, totalsX, finalY + 6)
-  doc.text(`${fmtAmount(invoice.tax_amount)} ${curSymbol}`, pw - 14, finalY + 6, { align: 'right' })
+  doc.text(`${curSymbol} ${fmtAmount(invoice.tax_amount)}`, pw - 14, finalY + 6, { align: 'right' })
 
   // Total box
   doc.setFillColor(primary[0], primary[1], primary[2])
@@ -233,7 +233,7 @@ export async function generateInvoicePDF(
   doc.setFontSize(11)
   doc.setFont('helvetica', 'bold')
   doc.text('TOTAL', totalsX + 2, finalY + 18)
-  doc.text(`${fmtAmount(invoice.total)} ${curSymbol}`, pw - 14, finalY + 18, { align: 'right' })
+  doc.text(`${curSymbol} ${fmtAmount(invoice.total)}`, pw - 14, finalY + 18, { align: 'right' })
 
   // ── Notes ──
   let notesY = finalY + 30

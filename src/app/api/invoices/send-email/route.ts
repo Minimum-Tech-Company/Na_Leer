@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendInvoiceEmail } from '@/lib/email'
+import { createTransaction, getTransactionToken, FedaPayConfig } from '@/lib/fedapay'
+import { decrypt } from '@/lib/encryption'
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,14 +38,47 @@ export async function POST(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('company_name')
+      .select('company_name, fedaipay_api_key, fedaipay_secret_key, fedaipay_environment')
       .eq('id', user.id)
       .single()
 
     const companyName = profile?.company_name || 'Votre entreprise'
 
+    // Generate payment link if not provided
+    let finalPaymentUrl = payment_url
+    if (!finalPaymentUrl && profile?.fedaipay_secret_key) {
+      try {
+        let secretKey: string
+        try {
+          secretKey = decrypt(profile.fedaipay_secret_key)
+        } catch {
+          secretKey = ''
+        }
+
+        if (secretKey) {
+          const config: FedaPayConfig = {
+            secretKey,
+            environment: (profile.fedaipay_environment as 'sandbox' | 'live') || 'sandbox',
+          }
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://na-leer.org'
+          const transaction = await createTransaction(config, {
+            description: `Facture ${invoice.invoice_number}`,
+            amount: invoice.total,
+            currency: invoice.currency || 'XOF',
+            callbackUrl: `${appUrl}/api/webhooks/fedapay`,
+            customerEmail: invoice.client?.email || undefined,
+            metadata: { type: 'invoice', invoice_id: invoice.id, invoice_number: invoice.invoice_number },
+          })
+          const tokenData = await getTransactionToken(config, transaction.id)
+          finalPaymentUrl = tokenData.url
+        }
+      } catch (e) {
+        console.error('Payment link generation failed:', e)
+      }
+    }
+
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://na-leer.org'
-    const url = payment_url || `${appUrl}/invoices/${invoice.id}`
+    const url = finalPaymentUrl || `${appUrl}/invoices/${invoice.id}`
 
     const result = await sendInvoiceEmail({
       to: invoice.client.email,
@@ -60,7 +95,7 @@ export async function POST(request: NextRequest) {
         .update({ status: 'sent' })
         .eq('id', invoice_id)
 
-      return NextResponse.json({ success: true })
+      return NextResponse.json({ success: true, payment_url: url })
     } else {
       return NextResponse.json(
         { error: "Erreur lors de l'envoi de l'email" },
