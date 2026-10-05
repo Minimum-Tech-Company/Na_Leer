@@ -70,7 +70,7 @@ export async function generateInvoicePDF(
 
   // ── Header background ──
   doc.setFillColor(primary[0], primary[1], primary[2])
-  doc.rect(0, 0, pw, 46, 'F')
+  doc.rect(0, 0, pw, 52, 'F')
 
   // ── Logo (base64 to avoid CORS) ──
   if (profile.logo_url) {
@@ -89,7 +89,7 @@ export async function generateInvoicePDF(
           const ratio = img.width / img.height
           let w = maxH * ratio
           if (w > 50) w = 50
-          doc.addImage(dataUrl, 'PNG', 14, 10, w, maxH)
+          doc.addImage(dataUrl, 'PNG', 14, 12, w, maxH)
         }
       }
     } catch { /* skip logo */ }
@@ -97,17 +97,17 @@ export async function generateInvoicePDF(
 
   // ── Company name (white on blue) ──
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(16)
+  doc.setFontSize(14)
   doc.setFont('helvetica', 'bold')
-  doc.text((profile.company_name || 'Votre Entreprise').toUpperCase(), 14, 40)
+  doc.text((profile.company_name || 'Votre Entreprise').toUpperCase(), 14, 46)
 
   // ── "FACTURE" title ──
-  doc.setFontSize(28)
+  doc.setFontSize(26)
   doc.setFont('helvetica', 'bold')
-  doc.text('FACTURE', pw - 14, 14, { align: 'right' })
+  doc.text('FACTURE', pw - 14, 18, { align: 'right' })
 
   // ── Invoice meta (right side, white) ──
-  doc.setFontSize(9)
+  doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
   const statusMap: Record<string, string> = {
     draft: 'BROUILLON', sent: 'ENVOYÉE', paid: 'PAYÉE', overdue: 'EN RETARD', cancelled: 'ANNULÉE',
@@ -118,7 +118,7 @@ export async function generateInvoicePDF(
     `Échéance : ${fmtDate(invoice.due_date)}`,
     `Statut : ${statusMap[invoice.status] || invoice.status}`,
   ]
-  let my = 28
+  let my = 34
   meta.forEach(line => {
     doc.text(line, pw - 14, my, { align: 'right' })
     my -= 4.5
@@ -126,7 +126,7 @@ export async function generateInvoicePDF(
 
   // ── Reset ──
   doc.setTextColor(0, 0, 0)
-  let y = 50
+  let y = 58
 
   // ── Bill To ──
   doc.setFontSize(8)
