@@ -26,9 +26,10 @@ import {
 } from 'lucide-react'
 import { Invoice, Client, Payment } from '@/types'
 
-type PeriodKey = 'week' | 'month' | 'year'
+type PeriodKey = 'day' | 'week' | 'month' | 'year'
 
 const PERIOD_OPTIONS: { key: PeriodKey; label: string }[] = [
+  { key: 'day', label: 'Jour' },
   { key: 'week', label: 'Semaine' },
   { key: 'month', label: 'Mois' },
   { key: 'year', label: 'Année' },
@@ -44,7 +45,11 @@ const MONTHS_SHORT = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août
 function computeRange(ref: Date, period: PeriodKey): { startMs: number; endMs: number } {
   let start: Date
   let end: Date
-  if (period === 'week') {
+  if (period === 'day') {
+    start = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate())
+    end = new Date(start)
+    end.setDate(end.getDate() + 1)
+  } else if (period === 'week') {
     const dayIndex = (ref.getDay() + 6) % 7 // 0 = lundi
     start = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() - dayIndex)
     end = new Date(start)
@@ -61,7 +66,9 @@ function computeRange(ref: Date, period: PeriodKey): { startMs: number; endMs: n
 
 function shiftPeriod(ref: Date, period: PeriodKey, dir: number): Date {
   const d = new Date(ref)
-  if (period === 'week') {
+  if (period === 'day') {
+    d.setDate(d.getDate() + dir)
+  } else if (period === 'week') {
     d.setDate(d.getDate() + dir * 7)
   } else if (period === 'month') {
     // Normalisation avant décalage : évite qu'un déplacement depuis le 31
@@ -76,6 +83,7 @@ function shiftPeriod(ref: Date, period: PeriodKey, dir: number): Date {
 }
 
 function formatPeriodLabel(ref: Date, period: PeriodKey): string {
+  if (period === 'day') return `${ref.getDate()} ${MONTHS_SHORT[ref.getMonth()]} ${ref.getFullYear()}`
   if (period === 'month') return `${MONTHS[ref.getMonth()]} ${ref.getFullYear()}`
   if (period === 'year') return `${ref.getFullYear()}`
   const dayIndex = (ref.getDay() + 6) % 7
@@ -507,7 +515,7 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Choix du mois / de l'année / de la semaine */}
+            {/* Choix du jour, de la semaine, du mois ou de l'année */}
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-1.5">
                 <button
@@ -518,29 +526,44 @@ export default function DashboardPage() {
                   <ChevronLeft className="h-4 w-4" />
                 </button>
 
-                {period === 'week' ? (
+                {period === 'week' && (
                   <span className="text-sm font-medium text-gray-700 min-w-[150px] text-center">{periodLabel}</span>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    {period === 'month' && (
-                      <select
-                        aria-label="Mois"
-                        value={anchor.getMonth()}
-                        onChange={(e) => { const d = new Date(anchor); d.setDate(1); d.setMonth(Number(e.target.value)); setAnchor(d) }}
-                        className="h-8 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 px-2.5 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                      >
-                        {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
-                      </select>
-                    )}
-                    <select
-                      aria-label="Année"
-                      value={anchor.getFullYear()}
-                      onChange={(e) => { const d = new Date(anchor); d.setDate(1); d.setFullYear(Number(e.target.value)); setAnchor(d) }}
-                      className="h-8 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 px-2.5 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    >
-                      {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                  </div>
+                )}
+
+                {period === 'day' && (
+                  <input
+                    type="date"
+                    aria-label="Jour"
+                    value={`${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}-${String(anchor.getDate()).padStart(2, '0')}`}
+                    onChange={(e) => {
+                      const [y, m, d] = e.target.value.split('-').map(Number)
+                      if (!y || !m || !d) return
+                      setAnchor(new Date(y, m - 1, d))
+                    }}
+                    className="h-8 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 px-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                )}
+
+                {period === 'month' && (
+                  <select
+                    aria-label="Mois"
+                    value={anchor.getMonth()}
+                    onChange={(e) => { const d = new Date(anchor); d.setDate(1); d.setMonth(Number(e.target.value)); setAnchor(d) }}
+                    className="h-8 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 px-2.5 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  >
+                    {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
+                  </select>
+                )}
+
+                {(period === 'month' || period === 'year') && (
+                  <select
+                    aria-label="Année"
+                    value={anchor.getFullYear()}
+                    onChange={(e) => { const d = new Date(anchor); d.setDate(1); d.setFullYear(Number(e.target.value)); setAnchor(d) }}
+                    className="h-8 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 px-2.5 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  >
+                    {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
                 )}
 
                 <button
@@ -573,7 +596,12 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">{period === 'week' ? 'Semaine précédente' : period === 'year' ? 'Année précédente' : 'Mois précédent'}</span>
+              <span className="text-sm text-gray-500">
+                {period === 'day' ? 'Jour précédent'
+                  : period === 'week' ? 'Semaine précédente'
+                  : period === 'year' ? 'Année précédente'
+                  : 'Mois précédent'}
+              </span>
               <span className="font-semibold text-gray-600">{formatCurrency(prevPeriodRevenue)}</span>
             </div>
 
