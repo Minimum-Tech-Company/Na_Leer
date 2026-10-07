@@ -21,16 +21,69 @@ import {
   XCircle,
   BarChart3,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { Invoice, Client, Payment } from '@/types'
 
 type PeriodKey = 'week' | 'month' | 'year'
 
-const PERIOD_OPTIONS: { key: PeriodKey; label: string; revenueLabel: string }[] = [
-  { key: 'week', label: 'Semaine', revenueLabel: 'Revenus cette semaine' },
-  { key: 'month', label: 'Mois', revenueLabel: 'Revenus ce mois-ci' },
-  { key: 'year', label: 'Année', revenueLabel: 'Revenus cette année' },
+const PERIOD_OPTIONS: { key: PeriodKey; label: string }[] = [
+  { key: 'week', label: 'Semaine' },
+  { key: 'month', label: 'Mois' },
+  { key: 'year', label: 'Année' },
 ]
+
+const MONTHS = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+]
+
+const MONTHS_SHORT = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sept', 'oct', 'nov', 'déc']
+
+function computeRange(ref: Date, period: PeriodKey): { startMs: number; endMs: number } {
+  let start: Date
+  let end: Date
+  if (period === 'week') {
+    const dayIndex = (ref.getDay() + 6) % 7 // 0 = lundi
+    start = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() - dayIndex)
+    end = new Date(start)
+    end.setDate(end.getDate() + 7)
+  } else if (period === 'month') {
+    start = new Date(ref.getFullYear(), ref.getMonth(), 1)
+    end = new Date(ref.getFullYear(), ref.getMonth() + 1, 1)
+  } else {
+    start = new Date(ref.getFullYear(), 0, 1)
+    end = new Date(ref.getFullYear() + 1, 0, 1)
+  }
+  return { startMs: start.getTime(), endMs: end.getTime() }
+}
+
+function shiftPeriod(ref: Date, period: PeriodKey, dir: number): Date {
+  const d = new Date(ref)
+  if (period === 'week') {
+    d.setDate(d.getDate() + dir * 7)
+  } else if (period === 'month') {
+    // Normalisation avant décalage : évite qu'un déplacement depuis le 31
+    // ne saute un mois (ex. 31/01 → 03/03)
+    d.setDate(1)
+    d.setMonth(d.getMonth() + dir)
+  } else {
+    d.setDate(1)
+    d.setFullYear(d.getFullYear() + dir)
+  }
+  return d
+}
+
+function formatPeriodLabel(ref: Date, period: PeriodKey): string {
+  if (period === 'month') return `${MONTHS[ref.getMonth()]} ${ref.getFullYear()}`
+  if (period === 'year') return `${ref.getFullYear()}`
+  const dayIndex = (ref.getDay() + 6) % 7
+  const start = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() - dayIndex)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 6)
+  return `${start.getDate()} ${MONTHS_SHORT[start.getMonth()]} – ${end.getDate()} ${MONTHS_SHORT[end.getMonth()]} ${end.getFullYear()}`
+}
 
 export default function DashboardPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
@@ -99,43 +152,27 @@ export default function DashboardPage() {
   const totalPending = sent.reduce((sum, i) => sum + Number(i.total), 0)
   const totalOverdue = overdue.reduce((sum, i) => sum + Number(i.total), 0)
 
-  const now = new Date()
-  const thisMonth = invoices.filter(i => {
-    const d = new Date(i.created_at)
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-  })
-  const lastMonth = invoices.filter(i => {
-    const d = new Date(i.created_at)
-    const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    return d.getMonth() === lm.getMonth() && d.getFullYear() === lm.getFullYear()
-  })
-  const revenueThisMonth = thisMonth.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.total), 0)
-  const revenueLastMonth = lastMonth.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.total), 0)
-
   const maxInvoiceTotal = Math.max(...invoices.map(i => Number(i.total)), 1)
 
   const [dayOffset, setDayOffset] = useState(0)
   const [period, setPeriod] = useState<PeriodKey>('month')
+  // Référence de période : permet de choisir un mois, une année ou une semaine passés
+  const [anchor, setAnchor] = useState<Date>(() => new Date())
 
-  // Bornes de la période sélectionnée (semaine = lundi → dimanche)
-  const periodRange = useMemo(() => {
-    const now = new Date()
-    let start: Date
-    let end: Date
-    if (period === 'week') {
-      const dayIndex = (now.getDay() + 6) % 7 // 0 = lundi
-      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayIndex)
-      end = new Date(start)
-      end.setDate(end.getDate() + 7)
-    } else if (period === 'month') {
-      start = new Date(now.getFullYear(), now.getMonth(), 1)
-      end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-    } else {
-      start = new Date(now.getFullYear(), 0, 1)
-      end = new Date(now.getFullYear() + 1, 0, 1)
-    }
-    return { startMs: start.getTime(), endMs: end.getTime() }
-  }, [period])
+  const resetAnchor = () => setAnchor(new Date())
+
+  const availableYears = useMemo(() => {
+    const years = new Set<number>([new Date().getFullYear()])
+    invoices.forEach(i => years.add(new Date(i.created_at).getFullYear()))
+    return Array.from(years).sort((a, b) => b - a)
+  }, [invoices])
+
+  const periodRange = useMemo(() => computeRange(anchor, period), [anchor, period])
+
+  const prevRange = useMemo(
+    () => computeRange(shiftPeriod(anchor, period, -1), period),
+    [anchor, period]
+  )
 
   const periodPaidInvoices = useMemo(
     () =>
@@ -147,6 +184,37 @@ export default function DashboardPage() {
   )
 
   const periodRevenue = periodPaidInvoices.reduce((s, i) => s + Number(i.total), 0)
+
+  const periodCreatedCount = useMemo(
+    () =>
+      invoices.filter((i) => {
+        const t = new Date(i.created_at).getTime()
+        return t >= periodRange.startMs && t < periodRange.endMs
+      }).length,
+    [invoices, periodRange]
+  )
+
+  const prevPeriodRevenue = useMemo(
+    () =>
+      paid.reduce((sum, i) => {
+        const t = new Date(i.created_at).getTime()
+        return t >= prevRange.startMs && t < prevRange.endMs ? sum + Number(i.total) : sum
+      }, 0),
+    [paid, prevRange]
+  )
+
+  const revenueChange =
+    prevPeriodRevenue > 0
+      ? Math.round(((periodRevenue - prevPeriodRevenue) / prevPeriodRevenue) * 100)
+      : null
+
+  const periodLabel = useMemo(() => formatPeriodLabel(anchor, period), [anchor, period])
+  const prevPeriodLabel = useMemo(
+    () => formatPeriodLabel(shiftPeriod(anchor, period, -1), period),
+    [anchor, period]
+  )
+
+  const stepPeriod = (dir: number) => setAnchor(shiftPeriod(anchor, period, dir))
 
   const dailyRevenue = useMemo(() => {
     const days: { label: string; dateStr: string; amount: number }[] = []
@@ -419,15 +487,13 @@ export default function DashboardPage() {
 
         <Card className={`border-0 shadow-sm transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`} style={{ transitionDelay: '450ms' }}>
           <CardHeader className="pb-2">
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle className="text-base">
-                {PERIOD_OPTIONS.find(p => p.key === period)?.revenueLabel}
-              </CardTitle>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <CardTitle className="text-base">Revenus</CardTitle>
               <div className="flex gap-1 p-1 rounded-xl bg-gray-100">
                 {PERIOD_OPTIONS.map(p => (
                   <button
                     key={p.key}
-                    onClick={() => setPeriod(p.key)}
+                    onClick={() => { setPeriod(p.key); resetAnchor() }}
                     className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
                       period === p.key
                         ? 'bg-white text-gray-900 shadow-sm'
@@ -441,40 +507,90 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Choix du mois / de l'année / de la semaine */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => stepPeriod(-1)}
+                  aria-label="Période précédente"
+                  className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+
+                {period === 'week' ? (
+                  <span className="text-sm font-medium text-gray-700 min-w-[150px] text-center">{periodLabel}</span>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    {period === 'month' && (
+                      <select
+                        aria-label="Mois"
+                        value={anchor.getMonth()}
+                        onChange={(e) => { const d = new Date(anchor); d.setDate(1); d.setMonth(Number(e.target.value)); setAnchor(d) }}
+                        className="h-8 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 px-2.5 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                      >
+                        {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
+                      </select>
+                    )}
+                    <select
+                      aria-label="Année"
+                      value={anchor.getFullYear()}
+                      onChange={(e) => { const d = new Date(anchor); d.setDate(1); d.setFullYear(Number(e.target.value)); setAnchor(d) }}
+                      className="h-8 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 px-2.5 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    >
+                      {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => stepPeriod(1)}
+                  aria-label="Période suivante"
+                  className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
             <div className="flex items-baseline justify-between">
               <span className="text-3xl font-bold text-green-600">{formatCurrency(periodRevenue)}</span>
               <span className="text-xs text-gray-500">
                 {periodPaidInvoices.length} facture{periodPaidInvoices.length > 1 ? 's' : ''} payée{periodPaidInvoices.length > 1 ? 's' : ''}
               </span>
             </div>
+
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">Factures créées (mois)</span>
-              <span className="font-bold text-gray-900">{thisMonth.length}</span>
+              <span className="text-sm text-gray-500">Factures créées</span>
+              <span className="font-bold text-gray-900">{periodCreatedCount}</span>
             </div>
+
             <div className="border-t pt-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Cumul historique</span>
                 <span className="font-bold text-gray-900">{formatCurrency(totalRevenue)}</span>
               </div>
             </div>
+
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">Revenus mois dernier</span>
-              <span className="font-semibold text-gray-600">{formatCurrency(revenueLastMonth)}</span>
+              <span className="text-sm text-gray-500">{period === 'week' ? 'Semaine précédente' : period === 'year' ? 'Année précédente' : 'Mois précédent'}</span>
+              <span className="font-semibold text-gray-600">{formatCurrency(prevPeriodRevenue)}</span>
             </div>
-            {revenueLastMonth > 0 && (
+
+            {revenueChange !== null && (
               <div className="flex items-center gap-1.5 text-xs bg-gray-50 rounded-lg p-2.5">
-                {revenueThisMonth >= revenueLastMonth ? (
+                {revenueChange >= 0 ? (
                   <>
                     <TrendingUp className="h-3.5 w-3.5 text-green-500" />
                     <span className="text-green-600 font-medium">
-                      +{Math.round(((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100)}% vs mois dernier
+                      +{revenueChange}% vs {prevPeriodLabel}
                     </span>
                   </>
                 ) : (
                   <>
                     <TrendingUp className="h-3.5 w-3.5 text-red-500 rotate-180" />
                     <span className="text-red-600 font-medium">
-                      {Math.round(((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100)}% vs mois dernier
+                      {revenueChange}% vs {prevPeriodLabel}
                     </span>
                   </>
                 )}
