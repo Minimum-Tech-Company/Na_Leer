@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { verifyWebhookSignature } from '@/lib/dexchange'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Direct transaction webhook format (from transaction/init)
     if (body.STATUS && body.externalTransactionId) {
@@ -29,10 +29,6 @@ export async function POST(request: NextRequest) {
         const parts = reference.split('-')
         if (parts.length >= 3) {
           const planId = parts[1]
-          // Extract user ID from planId or use a lookup
-          // The reference format is: SUB-{plan_id}-{timestamp}
-          // We need to find the subscription request to get the user_id
-          // Since we store pending subscriptions, let's look it up
           const { data: pending } = await supabase
             .from('pending_subscriptions')
             .select('user_id')
