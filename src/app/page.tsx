@@ -449,36 +449,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-12 lg:py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10 lg:mb-16">
-            <span className="text-blue-600 font-semibold text-sm uppercase tracking-wider">Témoignages</span>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mt-3 mb-4">Ils nous font confiance</h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
-            {testimonials.map((t) => (
-              <div key={t.name} className="bg-white p-5 sm:p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex gap-1 mb-3 sm:mb-4">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star key={s} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">&quot;{t.text}&quot;</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-xs sm:text-sm font-semibold text-blue-600">{t.name.charAt(0)}</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">{t.name}</p>
-                    <p className="text-xs text-gray-500">{t.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* CTA */}
       <section className="py-12 lg:py-28 bg-blue-600">
