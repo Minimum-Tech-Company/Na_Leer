@@ -425,7 +425,7 @@ export default function RegisterPage() {
             </p>
           </div>
           <div className="text-center text-xs text-gray-400 pb-4">
-            by Minimum Tech Company
+            by XELARYTH AI
           </div>
         </div>
       </div>

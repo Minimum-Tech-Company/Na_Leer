@@ -151,7 +151,7 @@ export default function AdminLayout({
           {children}
         </main>
         <footer className="border-t bg-white px-4 sm:px-6 lg:px-8 py-4 text-center text-xs text-gray-400">
-          by Minimum Tech Company
+          by XELARYTH AI
         </footer>
       </div>
     </div>

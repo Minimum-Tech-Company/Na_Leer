@@ -10,9 +10,9 @@ export const metadata: Metadata = {
     'facturation Ouest africaine', 'logiciel facturation', 'devis en ligne',
     'paiement Wave', 'paiement Orange Money', 'facturation Dakar', 'SaaS facturation',
   ],
-  authors: [{ name: 'Minimum Tech Company' }],
-  creator: 'Minimum Tech Company',
-  publisher: 'Minimum Tech Company',
+  authors: [{ name: 'XELARYTH AI' }],
+  creator: 'XELARYTH AI',
+  publisher: 'XELARYTH AI',
   metadataBase: new URL('https://na-leer.org'),
   openGraph: {
     type: 'website',
@@ -95,7 +95,7 @@ export default function RootLayout({
               },
               author: {
                 '@type': 'Organization',
-                name: 'Minimum Tech Company',
+                name: 'XELARYTH AI',
               },
               inLanguage: 'fr',
               availableLanguage: ['fr'],

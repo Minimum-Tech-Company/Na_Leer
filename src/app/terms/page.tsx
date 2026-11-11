@@ -27,7 +27,7 @@ export default function TermsPage() {
             <h2 className="text-xl font-bold text-gray-900 mb-3">1. Objet</h2>
             <p className="text-gray-600 leading-relaxed">
               Les présentes Conditions d&apos;utilisation (les « Conditions ») régissent l&apos;utilisation de la plateforme
-              NA-Leer (le « Service »), accessible à l&apos;adresse https://na-leer.org, éditée par Minimum Tech Company
+              NA-Leer (le « Service »), accessible à l&apos;adresse https://na-leer.org, éditée par XELARYTH AI
               (« l&apos;éditeur », « nous »).
             </p>
             <p className="text-gray-600 leading-relaxed mt-3">
@@ -97,7 +97,7 @@ export default function TermsPage() {
             <h2 className="text-xl font-bold text-gray-900 mb-3">6. Propriété intellectuelle</h2>
             <p className="text-gray-600 leading-relaxed">
               L&apos;ensemble du contenu du Service (code, design, logo, textes, images) est la propriété exclusive de
-              Minimum Tech Company ou de ses concédants et est protégé par les lois relatives à la propriété
+              XELARYTH AI ou de ses concédants et est protégé par les lois relatives à la propriété
               intellectuelle. Toute reproduction, modification ou exploitation non autorisée est interdite.
             </p>
             <p className="text-gray-600 leading-relaxed mt-3">
@@ -111,7 +111,7 @@ export default function TermsPage() {
             <ul className="list-disc list-inside text-gray-600 space-y-2">
               <li>NA-Leer est fourni « en l&apos;état ». Nous ne garantissons pas l&apos;absence d&apos;interruption ou d&apos;erreur</li>
               <li>Nous ne sommes pas responsables des pertes financières résultant de l&apos;utilisation du Service</li>
-              <li>La responsabilité de Minimum Tech Company ne peut excéder le montant payé par l&apos;utilisateur au cours des 12 derniers mois</li>
+              <li>La responsabilité de XELARYTH AI ne peut excéder le montant payé par l&apos;utilisateur au cours des 12 derniers mois</li>
               <li>Nous ne sommes pas responsables des opérations de paiement traitées par les prestataires tiers (FedaPay, DexPay)</li>
               <li>Vous êtes seul responsable de la conformité fiscale de vos factures</li>
             </ul>
@@ -148,7 +148,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">11. Modifications</h2>
             <p className="text-gray-600 leading-relaxed">
-              Minimum Tech Company se réserve le droit de modifier ces Conditions à tout moment.
+              XELARYTH AI se réserve le droit de modifier ces Conditions à tout moment.
               Les modifications prennent effet dès leur publication. Nous vous informerons des
               changements importants par email ou via le Service.
             </p>
@@ -157,7 +157,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">12. Contact</h2>
             <div className="bg-gray-100 rounded-xl p-5">
-              <p className="text-gray-700 font-medium">Minimum Tech Company</p>
+              <p className="text-gray-700 font-medium">XELARYTH AI</p>
               <p className="text-gray-600 text-sm mt-1">Email : legal@na-leer.org</p>
               <p className="text-gray-600 text-sm">Site web : https://na-leer.org</p>
             </div>
@@ -166,7 +166,7 @@ export default function TermsPage() {
       </main>
 
       <footer className="border-t border-gray-200 bg-white py-6 text-center text-xs text-gray-400">
-        by Minimum Tech Company
+        by XELARYTH AI
       </footer>
     </div>
   )

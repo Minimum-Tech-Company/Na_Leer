@@ -26,7 +26,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">1. Introduction</h2>
             <p className="text-gray-600 leading-relaxed">
-              La présente Politique de confidentialité décrit comment Minimum Tech Company (« nous », « notre » ou « NA-Leer »)
+              La présente Politique de confidentialité décrit comment XELARYTH AI (« nous », « notre » ou « NA-Leer »)
               collecte, utilise, protège et partage les informations personnelles des utilisateurs de la plateforme NA-Leer
               (le « Service »), accessible à l&apos;adresse https://na-leer.org.
             </p>
@@ -154,7 +154,7 @@ export default function PrivacyPage() {
               Pour toute question relative à cette politique de confidentialité, contactez-nous :
             </p>
             <div className="bg-gray-100 rounded-xl p-5 mt-3">
-              <p className="text-gray-700 font-medium">Minimum Tech Company</p>
+              <p className="text-gray-700 font-medium">XELARYTH AI</p>
               <p className="text-gray-600 text-sm mt-1">Email : privacy@na-leer.org</p>
               <p className="text-gray-600 text-sm">Site web : https://na-leer.org</p>
             </div>
@@ -163,7 +163,7 @@ export default function PrivacyPage() {
       </main>
 
       <footer className="border-t border-gray-200 bg-white py-6 text-center text-xs text-gray-400">
-        by Minimum Tech Company
+        by XELARYTH AI
       </footer>
     </div>
   )
