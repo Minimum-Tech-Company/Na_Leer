@@ -44,7 +44,7 @@ export async function updateSession(request: NextRequest) {
   const isApiRoute = pathname.startsWith('/api')
   const isAdminLogin = pathname === '/admin/login'
   const isAdminArea = pathname.startsWith('/admin')
-  const isConfirmPage = pathname.startsWith('/auth/confirm')
+  const isConfirmPage = pathname.startsWith('/auth/confirm') || pathname.startsWith('/auth/callback')
   const isPublicPage = pathname === '/privacy' || pathname === '/terms'
 
   if (isApiRoute) {

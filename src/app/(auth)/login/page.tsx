@@ -8,12 +8,38 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FileText, Mail, Lock as LockIcon, ArrowRight, Eye, EyeOff, CheckCircle } from 'lucide-react'
 
+function mapAuthError(raw: string): string {
+  const key = raw.toLowerCase().replace(/[_+]/g, ' ')
+  if (key.includes('email not confirmed') || key.includes('emailnotconfirmed')) {
+    return 'Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte de réception (et vos spams).'
+  }
+  if (key.includes('invalid login credentials') || key.includes('invalid credentials')) {
+    return 'Email ou mot de passe incorrect.'
+  }
+  if (key.includes('confirmation') || key.includes('otp') || key.includes('token')) {
+    return 'Le lien de confirmation a expiré ou est invalide. Réessayez depuis votre email.'
+  }
+  if (key.includes('rate limit') || key.includes('too many')) {
+    return 'Trop de tentatives. Réessayez dans quelques minutes.'
+  }
+  return raw
+}
+
+function readInitialError(): string {
+  if (typeof window === 'undefined') return ''
+  const params = new URLSearchParams(window.location.search)
+  const raw = params.get('error_description') || params.get('error') || ''
+  if (!raw) return ''
+  window.history.replaceState({}, '', '/login')
+  return mapAuthError(decodeURIComponent(raw))
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(readInitialError)
   const supabase = createClient()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -24,7 +50,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError(error.message)
+      setError(mapAuthError(error.message))
       setLoading(false)
       return
     }

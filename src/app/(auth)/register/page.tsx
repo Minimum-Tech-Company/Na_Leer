@@ -92,7 +92,10 @@ export default function RegisterPage() {
     try {
       const { data, error: authError } = await supabase.auth.signUp({
         email, password,
-        options: { data: { full_name: fullName, company_name: companyName, company_phone: companyPhone } },
+        options: {
+          data: { full_name: fullName, company_name: companyName, company_phone: companyPhone },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
       })
 
       if (authError) {
