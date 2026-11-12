@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import Link from 'next/link'
 import ThemeToggle from '@/components/theme-toggle'
 import { createClient } from '@/lib/supabase/client'
+import { mapAuthError } from '@/lib/auth-errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -99,7 +100,7 @@ export default function RegisterPage() {
       })
 
       if (authError) {
-        setError(authError.message || 'Erreur lors de l\'inscription')
+        setError(mapAuthError(authError.message) || 'Erreur lors de l\'inscription')
         setLoading(false)
         return
       }

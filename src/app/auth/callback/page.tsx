@@ -2,28 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { mapAuthError } from '@/lib/auth-errors'
 import { FileText, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
-
-function mapError(raw: string): string {
-  const key = raw.toLowerCase()
-  if (key.includes('email_not_confirmed') || key.includes('email not confirmed')) {
-    return 'Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte de réception.'
-  }
-  if (key.includes('confirmation_failed') || key.includes('otp_expired') || key.includes('token has expired')) {
-    return "Le lien de confirmation a expiré. Demandez un nouveau lien depuis la page d'inscription."
-  }
-  if (key.includes('invalid_credentials') || key.includes('invalid login')) {
-    return 'Email ou mot de passe incorrect.'
-  }
-  if (key.includes('user_already_exists') || key.includes('already registered')) {
-    return 'Un compte existe déjà avec cet email. Connectez-vous ou réinitialisez votre mot de passe.'
-  }
-  if (key.includes('rate_limit') || key.includes('too many')) {
-    return 'Trop de tentatives. Réessayez dans quelques minutes.'
-  }
-  return raw || 'Une erreur est survenue lors de la confirmation.'
-}
 
 function redirectForType(type: string | null) {
   if (type === 'recovery') {
@@ -77,7 +58,7 @@ export default function AuthCallbackPage() {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
         if (exchangeError) {
           subscription.unsubscribe()
-          setError(mapError(exchangeError.message))
+          setError(mapAuthError(exchangeError.message))
           return
         }
       }
@@ -89,7 +70,7 @@ export default function AuthCallbackPage() {
 
       if (rawError) {
         subscription.unsubscribe()
-        setError(mapError(rawError))
+        setError(mapAuthError(rawError))
         return
       }
 
@@ -100,7 +81,7 @@ export default function AuthCallbackPage() {
           return
         }
         subscription.unsubscribe()
-        setError(mapError('confirmation_failed'))
+        setError(mapAuthError('confirmation_failed'))
       }, 500)
     }
 

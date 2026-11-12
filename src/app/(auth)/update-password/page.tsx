@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { isSessionMissingError, mapAuthError } from '@/lib/auth-errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FileText, Lock as LockIcon, ArrowRight, Eye, EyeOff, CheckCircle } from 'lucide-react'
@@ -14,6 +15,7 @@ export default function UpdatePasswordPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [needNewLink, setNeedNewLink] = useState(false)
   const [success, setSuccess] = useState(false)
   const router = useRouter()
   const supabase = createClient()
@@ -44,7 +46,12 @@ export default function UpdatePasswordPage() {
     const { error: err } = await supabase.auth.updateUser({ password })
 
     if (err) {
-      setError(err.message)
+      if (isSessionMissingError(err.message)) {
+        setError("Votre session a expiré ou ce lien n'est plus valide. Demandez un nouveau lien de réinitialisation.")
+        setNeedNewLink(true)
+      } else {
+        setError(mapAuthError(err.message))
+      }
     } else {
       setSuccess(true)
       setTimeout(() => router.push('/dashboard'), 2000)
@@ -80,7 +87,14 @@ export default function UpdatePasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg">{error}</div>
+                <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg space-y-2">
+                  <p>{error}</p>
+                  {needNewLink && (
+                    <Link href="/forgot-password" className="font-semibold underline">
+                      Demander un nouveau lien
+                    </Link>
+                  )}
+                </div>
               )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>

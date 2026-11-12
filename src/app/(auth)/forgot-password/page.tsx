@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { mapAuthError } from '@/lib/auth-errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FileText, Mail, ArrowRight, CheckCircle } from 'lucide-react'
@@ -25,7 +26,7 @@ export default function ForgotPasswordPage() {
     })
 
     if (err) {
-      setError(err.message)
+      setError(mapAuthError(err.message))
     } else {
       setSent(true)
     }

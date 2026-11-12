@@ -1,55 +1,32 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import ThemeToggle from '@/components/theme-toggle'
 import { createClient } from '@/lib/supabase/client'
+import { mapAuthError } from '@/lib/auth-errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FileText, Mail, Lock as LockIcon, ArrowRight, Eye, EyeOff, CheckCircle } from 'lucide-react'
-
-function mapAuthError(raw: string): string {
-  const key = raw.toLowerCase().replace(/[_+]/g, ' ')
-  if (key.includes('email not confirmed') || key.includes('emailnotconfirmed')) {
-    return 'Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte de réception (et vos spams).'
-  }
-  if (
-    key.includes('session missing') ||
-    key.includes('sessionnotfound') ||
-    key.includes('session not found') ||
-    key.includes('authsessionmissing') ||
-    key.includes('session expired')
-  ) {
-    return 'Votre session a expiré. Veuillez vous reconnecter.'
-  }
-  if (key.includes('invalid login credentials') || key.includes('invalid credentials')) {
-    return 'Email ou mot de passe incorrect.'
-  }
-  if (key.includes('confirmation') || key.includes('otp') || key.includes('token')) {
-    return 'Le lien de confirmation a expiré ou est invalide. Réessayez depuis votre email.'
-  }
-  if (key.includes('rate limit') || key.includes('too many')) {
-    return 'Trop de tentatives. Réessayez dans quelques minutes.'
-  }
-  return raw
-}
-
-function readInitialError(): string {
-  if (typeof window === 'undefined') return ''
-  const params = new URLSearchParams(window.location.search)
-  const raw = params.get('error_description') || params.get('error') || ''
-  if (!raw) return ''
-  window.history.replaceState({}, '', '/login')
-  return mapAuthError(decodeURIComponent(raw))
-}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(readInitialError)
+  const [error, setError] = useState('')
   const supabase = createClient()
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const raw = params.get('error_description') || params.get('error') || ''
+    if (!raw) return
+    window.history.replaceState({}, '', '/login')
+    // Lecture one-shot des params d'URL après hydration : un lazy init dans useState
+    // provoque un mismatch d'hydratation (React #418) puis perd l'erreur au re-mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setError(mapAuthError(raw))
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
