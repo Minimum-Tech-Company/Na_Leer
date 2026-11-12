@@ -13,6 +13,15 @@ function mapAuthError(raw: string): string {
   if (key.includes('email not confirmed') || key.includes('emailnotconfirmed')) {
     return 'Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte de réception (et vos spams).'
   }
+  if (
+    key.includes('session missing') ||
+    key.includes('sessionnotfound') ||
+    key.includes('session not found') ||
+    key.includes('authsessionmissing') ||
+    key.includes('session expired')
+  ) {
+    return 'Votre session a expiré. Veuillez vous reconnecter.'
+  }
   if (key.includes('invalid login credentials') || key.includes('invalid credentials')) {
     return 'Email ou mot de passe incorrect.'
   }
@@ -46,6 +55,9 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    // Neutralise un éventuel cookie de session invalide ("sb" mort) avant la connexion
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
 
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
