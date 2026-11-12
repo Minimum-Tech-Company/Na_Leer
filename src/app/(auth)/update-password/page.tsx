@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { isSessionMissingError, mapAuthError } from '@/lib/auth-errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import AuthRedirectHandler from '@/components/auth-redirect-handler'
 import { FileText, Lock as LockIcon, ArrowRight, Eye, EyeOff, CheckCircle } from 'lucide-react'
 
 export default function UpdatePasswordPage() {
@@ -61,6 +62,7 @@ export default function UpdatePasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <AuthRedirectHandler hashOnly />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">

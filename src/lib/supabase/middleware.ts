@@ -39,7 +39,9 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/forgot-password') || pathname.startsWith('/update-password')
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/forgot-password')
+  // /update-password reste accessible même connecté (flux de réinitialisation après échange de session)
+  const isPasswordResetPage = pathname.startsWith('/update-password')
   const isLandingPage = pathname === '/'
   const isApiRoute = pathname.startsWith('/api')
   const isAdminLogin = pathname === '/admin/login'
@@ -51,7 +53,7 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse
   }
 
-  if (!user && !isAuthPage && !isLandingPage && !isAdminLogin && !isAdminArea && !isConfirmPage && !isPublicPage) {
+  if (!user && !isAuthPage && !isPasswordResetPage && !isLandingPage && !isAdminLogin && !isAdminArea && !isConfirmPage && !isPublicPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

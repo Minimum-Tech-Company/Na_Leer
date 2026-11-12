@@ -53,6 +53,24 @@ export default function AuthCallbackPage() {
     })
 
     const run = async () => {
+      // Flux implicite (hash #access_token=... — liens admin/anciens emails) :
+      // le client est en PKCE, auth-js refuse ce hash → on installe la session nous-mêmes.
+      const accessToken = hashParams.get('access_token')
+      const refreshToken = hashParams.get('refresh_token')
+      if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        })
+        subscription.unsubscribe()
+        if (sessionError) {
+          setError(mapAuthError(sessionError.message))
+          return
+        }
+        redirectForType(hashParams.get('type') || params.get('type'))
+        return
+      }
+
       const code = params.get('code')
       if (code) {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
